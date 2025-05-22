@@ -1,0 +1,13 @@
+#!/bin/bash
+
+prefix=/usr/local
+
+echo "Uninstalling patchomv utility..."
+
+sudo rm -f "$prefix"/bin/patchomv
+
+sudo rm -rf "$prefix"/share/patchomv
+
+sudo rm -f  /etc/apt/apt.conf.d/99patchomv
+
+echo "Done."

@@ -1,0 +1,331 @@
+#!/bin/bash
+
+# internal variables and functions, do not touch
+deploy="/srv/salt/omv/deploy"
+apply_salt=no
+category=
+data="/usr/local/share/patchomv"
+delete=no
+_delete=no
+
+function log()
+{
+  if [ "$delete" = "yes" ] || [ "$_delete" = "yes" ]; then
+    echo "Deleting: $1"
+  else
+    echo "$1"
+  fi
+}
+
+function set_env()
+{
+  if [ "$delete" = "yes" ]; then
+    unset_env "$1" "$2" "$3"
+    return
+  fi
+  (sudo omv-env get $2 | grep -q "$3" ) && enabled=yes || enabled=no
+  if [ "$enabled" = "no" ]; then
+    echo "Set $2 to $3: "
+    sudo omv-env set $2 "$3"
+    apply_salt=yes
+    category="$category\n$1"
+  fi
+}
+
+function unset_env()
+{
+  echo "Unset $2: "
+  sudo omv-env unset $2
+  apply_salt=yes
+  category="$category\n$1"
+}
+
+function file_changed ()
+{
+  src="$data/$1"
+  dest="$deploy/$2"
+  _retval=1
+
+  if [ "$delete" = "yes" ] || [ "$_delete" = "yes" ]; then
+    rm -f "$dest"
+    _retval=0
+  elif [ ! -e "$dest" ] || ! cmp -s "$src" "$dest"; then
+    cp "$src" "$dest"
+    _retval=0
+  fi
+  return $_retval
+}
+
+# this function must be called last
+function finally_write_env()
+{
+  category=$(echo -e $category | sort | uniq | tr "\n" " ")
+  if [ "$apply_salt" = "yes" ]; then
+    echo "Applying salt configuration"
+    echo "   staging ..."
+    sudo omv-salt stage run -q prepare
+    echo "   deploying ..."
+    sudo omv-salt deploy run -q $category
+    echo "done."
+  else
+    echo "Nothing to apply."
+  fi
+}
+
+
+# --- functions which modify js files
+
+function apply_confirmation()
+{
+  # either disable confiramtation on apply/undo or remove checkbox in confirmation dialog
+  # cmd=noapply disables confirmation, anything else removes checkbox
+#  cmd="$1"
+#  main=$(grep main /var/www/openmediavault/index.html | sed -e 's|.*\(main.*\)" type="mod.*|\1|')
+#  main="/var/www/openmediavault/$main"
+
+
+#  if [ "$cmd" = "noapply" ]; then
+#    echo -n "Confirmation on Apply: "
+#    grep -q "want to apply the configuration changes" "$main" && change=yes || change=no
+#    if [ "$change" = "yes" ]; then
+#  sed -e 's|)}onUndoPendingChanges().*{t&&(this.blockUI.start|onUndoPendingChanges(){!0\&\&(this.blockUI.start|' morig.js > mnew.js
+#  sed -e 's|router.navigate(\["/reload"\])}))})}}F|router.navigate(\["/reload"\])}))}}F|' morig.js > mnew.js
+#  sed -e 's|onApplyPendingChanges().*{t&&(this.blockUI.start|onApplyPendingChanges(){!0\&\&(this.blockUI.start|' mnew.js > mnew2.js
+#    fi
+
+#  else
+    file=$(grep -l 'showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      echo "Confirmation checkbox"
+      sudo sed -i -e 's|showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0|showConfirmCheckbox=!1|' "$file"
+    fi
+#  fi
+
+}
+
+function samba_aapl()
+{
+  # use fruit stream_xattr if OMV_AAPL = yes
+  grep -q "enable_timemachine_vfs |" "$deploy"/samba/files/shares.j2 && change=yes || change=no
+  if [ "$change" = "yes" ]; then
+    echo "Use fruit in shares if aapl"
+    cat "$data"/09aapl.j2 "$deploy"/samba/files/shares.j2 | sed -e "s/enable_timemachine_vfs/fruit_aapl/" > /tmp/samba_aapl
+    sudo cp /tmp/samba_aapl "$deploy"/samba/files/shares.j2
+    apply_salt="yes"
+    category="$category\nsamba"
+  fi
+  grep -q "enable_timemachine_vfs |" "$deploy"/samba/files/homes.j2 && change=yes || change=no
+  if [ "$change" = "yes" ]; then
+    echo "Use fruit in homes if aapl"
+    cat "$data"/09aapl.j2 "$deploy"/samba/files/homes.j2 | sed -e "s/enable_timemachine_vfs/fruit_aapl/" > /tmp/samba_aapl
+    sudo cp /tmp/samba_aapl "$deploy"/samba/files/homes.j2
+    apply_salt="yes"
+    category="$category\nsamba"
+  fi
+}
+
+function sharename_spaces()
+{
+  # allow spaces in share names
+  file=$(grep -l ':+|<>=;,\*?\. ]' /var/www/openmediavault/*js)
+  if [ -n "$file" ]; then
+    echo "Allow spaces in share names"
+    sudo sed -i -e 's/:+|<>=;,\*?\. ]/:+|<>=;,\*?\.]/g' "$file"
+  fi
+}
+
+function gui_store_dos_attr()
+{
+  # set omv gui to samba default of smb.conf
+  file=$(grep -l 'or directory."),value:!1' /var/www/openmediavault/*js)
+  if [ -n "$file" ]; then
+    echo "Set default GUI 'Store DOS Attributes' to yes for new shares"
+    sudo sed -i -e 's/or directory."),value:!1/or directory."),value:!0/' "$file"
+  fi
+}
+
+
+function identifier_spaces()
+{
+  # allow spaces in identifiers
+  file=$(grep -l '/^\[\\w\]+\$/' /var/www/openmediavault/*js)
+  if [ -n "$file" ]; then
+    echo "Allow spaces in identifiers"
+    sudo sed -i -e 's|\^\[\\w\]+\$|\^\[\\w \]+\$|' "$file"
+  fi
+}
+
+
+function usb_raid()
+{
+  grep -q "Skip.*connected via USB" /usr/share/openmediavault/engined/rpc/mdmgmt.inc && change=yes || change=no
+  if [ "$change" = "yes" ]; then
+    echo "Enable USB RAID"
+    sudo sed -i -e  '/Skip.*connected via USB/,+2d' /usr/share/openmediavault/engined/rpc/mdmgmt.inc 
+  fi
+}
+
+
+function hostname_case()
+{
+  grep -q "lower" /srv/salt/omv/deploy/hostname/default.sls && change=yes || change=no
+  if [ "$change" = "yes" ]; then
+    echo "Hostname case sensitive"
+    sudo sed -i -e "s/| lower//"  "/srv/salt/omv/deploy/hostname/default.sls"
+    apply_salt=yes
+    category="$category\nhostname\navahi"
+  fi
+}
+
+
+function optional_domainname ()
+{
+  file=$(grep -l 'domainName",required:!0' /var/www/openmediavault/*js)
+  if [ -n "$file" ]; then
+    echo "Domainname optional"
+    sudo sed -i -e 's/domainName",required:!0/domainName",required:!1/' "$file"
+  fi
+}
+
+
+function nocursor()
+{
+#  styles=$(grep -l 'busy{cursor:url(data:image.\{5733\}auto' /var/www/openmediavault/styles*css)
+  styles=$(grep -l 'amiga20-busy{cursor:url' /var/www/openmediavault/styles*css)
+  if [ -n "$styles" ]; then
+    echo "Removing pixelated cursor in css"
+#    sudo sed -i".bak" -e 's|busy{cursor:url(data:image.\{5733\}auto|busy{cursor:wait,auto|g' "$styles"
+    sudo sed -i -e 's|amiga20-busy.*amiga13-select|amiga20-busy{cursor:wait,auto}\.omv-cursor-amiga13-select|' "$styles"
+  fi
+}
+
+
+function change_background()
+{
+  [ ! -e "$data/background.jpg" ] && return
+  change=$(cmp "$data/background.jpg" /var/www/openmediavault/assets/images/login.jpg)
+  if [ -n "$change" ]; then
+    echo "Set custom background"
+    sudo cp "$data/background.jpg" /var/www/openmediavault/assets/images/login.jpg
+  fi
+}
+
+
+function show_users_group()
+{
+  change="no"
+  grep -q 'name == "users"' /usr/share/php/openmediavault/system/group.inc || change="yes"
+  if [ "$change" = "yes" ]; then
+    echo "Allow modification of group users"
+    cd /usr/share/php/openmediavault/system
+    patch -p0 < "$data/group.inc.diff"
+  fi
+}
+
+
+# --- functions which don't modify source and are still there after updates
+
+function samba_global_mac()
+{
+  change=no
+  [ "$1" = "delete" ] && _delete="yes"
+  file_changed 11global.sls samba/11global.sls && change="yes"
+  file_changed global-mac.j2 samba/files/global-mac.j2 && change="yes"
+  if [ "$change" = "yes" ]; then
+    log "Modifying samba global"
+    apply_salt="yes"
+    category="$category\nsamba"
+  fi
+  _delete=no
+}
+
+
+function enable_hdparm()
+{
+  change=no
+  [ "$1" = "delete" ] && _delete="yes"
+  file_changed 21hdparm.sls smartmontools/21hdparm.sls && change="yes"
+  file_changed 22hdparm.sls smartmontools/22hdparm.sls && change="yes"
+  file_changed etc-hdparm.conf.j2 smartmontools/files/etc-hdparm.conf.j2 && change="yes"
+  if [ "$change" = "yes" ]; then
+    log "disable smartctl-hdparm"
+    log "enable hdparm"
+    sudo rm -f /etc/hdparm.conf
+    apply_salt="yes"
+    category="$category\nsmartmontools"
+  fi
+  _delete=no
+}
+
+
+function avahi_no_count_hostname()
+{
+  change=no
+  [ "$1" = "delete" ] && _delete="yes"
+  file_changed 21configure.sls avahi/21configure.sls && change="yes"
+  file_changed etc-avahi-avahi-daemon_conf_no2.j2 avahi/files/etc-avahi-avahi-daemon_conf_no2.j2 && change="yes"
+  if [ "$change" = "yes" ]; then
+    log "Avahi no -2 hostnames"
+    apply_salt="yes"
+    category="$category\navahi"
+  fi
+  _delete=no
+}
+
+# --- main
+if [[ $EUID -ne 0 ]]; then
+   echo "Error: This script must be run with sudo."
+   exit 1
+fi
+if [ "$1" = "delete" ]; then
+  delete="yes"
+  echo "Deleting patches and configuration changes to omv"
+else
+  echo "Applying patches and configuration changes to omv"
+fi
+
+# omv environment variables
+# to delete or unset a variable, change 'set_env' to 'unset_env', e.g: unset_env samba OMV_SAMBA_CREATEMASK 0644
+# 
+# Mac style service names
+set_env avahi OMV_RSYNC_ZEROCONF_NAME "%h"
+set_env avahi OMV_SSHD_ZEROCONF_NAME "%h"
+set_env avahi OMV_WEBGUI_ZEROCONF_NAME "%h"
+set_env avahi OMV_SAMBA_ZEROCONF_NAME "%h"
+# Mac style UNIX permissions, used when setting fruit:nfs_aces=no
+set_env samba OMV_SAMBA_CREATEMASK 0644
+set_env samba OMV_SAMBA_DIRECTORYMASK 0755
+set_env samba OMV_SAMBA_HOMES_CREATEMASK 0644
+set_env samba OMV_SAMBA_HOMES_DIRECTORYMASK 0755
+set_env samba OMV_SAMBA_SHARE_CREATEMASK 0644
+set_env samba OMV_SAMBA_SHARE_DIRECTORYMASK 0755
+set_env samba OMV_SAMBA_SHARE_FORCECREATEMODE 0600
+set_env samba OMV_SAMBA_SHARE_FORCEDIRECTORYMODE 0700
+# Mac specific settings to act like macOS smb server
+set_env samba OMV_SAMBA_SHARE_FRUIT_NFSACES yes
+set_env samba OMV_SAMBA_SHARE_FRUIT_COPYFILE no
+set_env samba OMV_SAMBA_SHARE_FRUIT_RESOURCE xattr
+
+# modify settings using salt
+# to delete a modification, add 'delete' as parameter to the function, e.g: enable_hdparm delete
+avahi_no_count_hostname
+enable_hdparm
+samba_global_mac
+
+# modify source code
+# to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
+sharename_spaces
+samba_aapl
+gui_store_dos_attr
+identifier_spaces
+usb_raid
+apply_confirmation
+nocursor
+hostname_case
+optional_domainname
+#change_background
+show_users_group
+
+# don't remove this line
+finally_write_env
+

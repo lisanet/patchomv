@@ -1,0 +1,12 @@
+--- group.inc.orig	2023-11-22 22:28:15.934782129 +0100
++++ group.inc	2023-11-22 22:37:08.365518795 +0100
+@@ -187,6 +187,9 @@
+ 	public function isSystemAccount() {
+ 		if (FALSE === ($gid = $this->getGid()))
+ 			return FALSE;
++		if ($this->name == "users") {
++			return FALSE;
++		}
+ 		// Get shadow password suite configuration.
+ 		$ld = \OMV\System\System::getLoginDefs();
+ 		// Get the min/max values of the non-system account ID sequence.
