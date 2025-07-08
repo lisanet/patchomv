@@ -1,0 +1,123 @@
+#!/bin/bash
+# (c) 2025 Simone Karin Lehmann
+# License: MIT
+# Converts a cron file to systemd timer files
+# Usage: cron2timer <cronfile>
+
+CRONFILE="$1"
+
+
+CRON_LINE=""
+RANDOMIZE_DELAY=""
+
+DOW_NAMES=(Sun Mon Tue Wed Thu Fri Sat Sun)
+
+gen_systemd_files () 
+{
+    local _CRON_LINE="$1"
+    if [[ "$_CRON_LINE" =~ ^@ ]]; then
+        read -r PERIOD USER CMD <<< "$_CRON_LINE"
+        RANDOMIZE_DELAY="RandomizedDelaySec=10m"
+        ONCAL=${PERIOD#@}
+    else
+        read -r MIN HOUR DOM MONTH DOW USER CMD <<< "$1"
+
+        # Platzhalter
+        [[ "$MIN" == "*" ]] && MIN="0"
+        [[ "$HOUR" == "*" ]] && HOUR="0"
+    
+        # every minute/hour/day
+        [[ "$MIN" =~ "*/" ]] && MIN="0/${MIN#*/}"
+        [[ "$HOUR" =~ "*/" ]] && HOUR="0/${HOUR#*/}"
+        [[ "$DOM" =~ "*/" ]] && DOM="1/${DOM#*/}"
+
+        # OnCalendar zusammenbauen
+        if [[ "$DOW" == "*" ]]; then
+            ONCAL="*-${MONTH}-${DOM} ${HOUR}:${MIN}:00"
+        else
+            IFS=',' read -ra DOWS <<< "$DOW"
+            DOW_NAMES_LIST=()
+            for d in "${DOWS[@]}"; do
+                #DOW_NAMES_LIST+=("$(map_dow "$d")")
+                DOW_NAMES_LIST+=("${DOW_NAMES[$d]}")
+            done
+            JOINED_DOW=$(IFS=','; echo "${DOW_NAMES_LIST[*]}")
+            ONCAL="${JOINED_DOW} *-${MONTH}-${DOM} ${HOUR}:${MIN}:00"
+        fi
+    fi
+
+    # Dateinamen
+    CMD_EXEC=$(echo "$CMD" | awk '{print $1}')
+    BASE_NAME="omv-$(basename "$CMD_EXEC")"
+    SERVICE_NAME="${BASE_NAME}.service"
+    TIMER_NAME="${BASE_NAME}.timer"
+    SYSTEMD_DIR="/etc/systemd/system"
+
+    # für testen ins aktuelle Verzeichnis
+    SYSTEMD_DIR="/var/lib/openmediavault/systemd"
+    mdkir -p "${SYSTEMD_DIR}" >/dev/null 2>&1 || true
+
+
+# .service schreiben
+cat > "${SYSTEMD_DIR}/${SERVICE_NAME}" << EOF
+[Unit]
+Description=Converted from cron $BASE_NAME
+After=network-online.target
+
+[Service]
+Type=oneshot
+Environment="SHELL=/bin/sh"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+User=${USER}
+ExecStart=/bin/sh -c '$CMD'
+EOF
+
+if [[ "$ONCAL" == "reboot" ]]; then
+# regular service
+cat >> "${SYSTEMD_DIR}/${SERVICE_NAME}" <<EOF
+[Install]
+WantedBy=multi-user.target
+EOF
+else
+# OnCalendar timer
+cat > "${SYSTEMD_DIR}/${TIMER_NAME}" <<EOF
+[Unit]
+Description=Timer for ${SERVICE_NAME}
+
+[Timer]
+OnCalendar=${ONCAL}
+Persistent=true
+Unit=${SERVICE_NAME}
+$RANDOMIZE_DELAY
+[Install]
+WantedBy=timers.target
+EOF
+fi
+
+systemctl link "${SYSTEMD_DIR}/${SERVICE_NAME}" "${SYSTEMD_DIR}/${TIMER_NAME}" >/dev/null 2>&1 || true
+systemctl daemon-reload
+if [[ "$ONCAL" == "reboot" ]]; then
+    echo "Enabling service ${SERVICE_NAME}"
+    systemctl enable "${SERVICE_NAME}"
+else
+    echo "Enabling timer ${TIMER_NAME}"
+    systemctl enable --now "${TIMER_NAME}"
+fi
+}
+
+# --- main ---
+while IFS= read -r line; do
+    [[ "$line" =~ ^#.* ]] && continue
+    [[ -z "$line" ]] && continue
+
+    if [[ "$line" =~ ^[0-9\*@] ]]; then
+        CRON_LINE="$line"
+        gen_systemd_files "$CRON_LINE"
+    fi
+done < "$CRONFILE"
+
+if [[ -z "$CRON_LINE" ]]; then
+    echo "No active cron jobs found"
+    exit 1
+fi
+
