@@ -5,6 +5,7 @@ prefix=/usr/local
 echo "Uninstalling patchomv utility..."
 
 sudo rm -f "$prefix"/bin/patchomv
+sudo rm -f "$prefix"/bin/cron2timer
 
 sudo rm -rf "$prefix"/share/patchomv
 
