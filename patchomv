@@ -258,6 +258,41 @@ function enable_hdparm()
 }
 
 
+function cron_timer()
+{
+  change="no"
+  [ "$1" = "delete" ] && _delete="yes"
+  file_changed 21userdefined.sls cron/21userdefined.sls && change="yes"
+  if [ "$change" = "yes" ]; then
+    log "Use systemd timers for cron"
+    apply_salt="yes"
+    category="$category\ncron"
+  fi
+  _delete=no
+}
+
+
+function rsync_timer()
+{
+  if [ "$1" = "delete" ]; then
+    sudo cp /srv/salt/omv/deploy/rsync/10rsync-cron.sls srv/salt/omv/deploy/rsync/default.sls
+    sudo rm -f "$deploy/rsync/10rsync-cron.sls" "$deploy/rsync/20rsync-timer.sls"
+    return
+  fi
+
+  change=no
+  grep -q "configure_rsync_cron" /srv/salt/omv/deploy/rsync/default.sls && change="yes"
+  file_changed 20rsync-timer.sls rsync/20rsync-timer.sls && change="yes"
+  if [ "$change" = "yes" ]; then
+    log "Use systemd timers for rsync"
+    sudo cp /srv/salt/omv/deploy/rsync/default.sls /srv/salt/omv/deploy/rsync/10rsync-cron.sls
+    sudo cp "$data/default.sls" "$deploy/rsync/default.sls"
+    apply_salt=yes
+    category="$category\nrsync"
+  fi
+}
+
+
 function avahi_no_count_hostname()
 {
   change=no
@@ -311,6 +346,8 @@ set_env samba OMV_SAMBA_SHARE_FRUIT_RESOURCE xattr
 avahi_no_count_hostname
 enable_hdparm
 samba_global_mac
+cron_timer
+rsync_timer
 
 # modify source code
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
