@@ -55,8 +55,7 @@ gen_systemd_files ()
 
     # für testen ins aktuelle Verzeichnis
     SYSTEMD_DIR="/var/lib/openmediavault/systemd"
-    mdkir -p "${SYSTEMD_DIR}" >/dev/null 2>&1 || true
-
+    mkdir -p "${SYSTEMD_DIR}" >/dev/null 2>&1 || true
 
 # .service schreiben
 cat > "${SYSTEMD_DIR}/${SERVICE_NAME}" << EOF
