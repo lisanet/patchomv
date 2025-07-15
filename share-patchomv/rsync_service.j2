@@ -16,6 +16,6 @@ ExecStart=/bin/sh -c '{{ script_path }}
 {%- if not job.sendemail | to_bool -%}
 {{ spc }}>/dev/null 2>&1
 {%- else -%}
-{{ spc }}2>&1 | mail -E -s "Task{{ ' - ' ~ job.comment | replace('\n', ' ') if job.comment | length > 0 else '' }}" -a "From: Systemd Timer <{{ job.username }}>" {{ job.username }} >/dev/null 2>&1
+{{ spc }}2>&1 | mail -E -s "Task{{ ' - ' ~ job.comment | replace('\n', ' ') if job.comment | length > 0 else '' }}" -a "From: Systemd Timer <{{ user }}>" {{ user }} >/dev/null 2>&1
 {%- endif -%}'
 
