@@ -1,0 +1,21 @@
+{%- set user = salt['pillar.get']('default:OMV_RSYNC_CRONUSER', 'root') -%}
+{%- set prefix = salt['pillar.get']('default:OMV_SYSTEMD_RSYNC_PREFIX', 'omv-rsync-') -%}
+{%- set spc = ' ' -%}
+
+{{ pillar['headers']['multiline'] -}}
+[Unit]
+Description=Service for job {{ prefix ~ job.uuid }}
+After=network-online.target
+
+[Service]
+Type=oneshot
+Environment="SHELL=/bin/sh"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+User={{ user }}
+ExecStart=/bin/sh -c '{{ script_path }} 
+{%- if not job.sendemail | to_bool -%}
+{{ spc }}>/dev/null 2>&1
+{%- else -%}
+{{ spc }}2>&1 | mail -E -s "Task{{ ' - ' ~ job.comment | replace('\n', ' ') if job.comment | length > 0 else '' }}" -a "From: Systemd Timer <{{ job.username }}>" {{ job.username }} >/dev/null 2>&1
+{%- endif -%}'
+

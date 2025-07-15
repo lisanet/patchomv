@@ -1,0 +1,33 @@
+{% set random_delay = salt['pillar.get']('default:OMV_CRONTAB_RANDOM_DELAY', '15') %}
+{%- set prefix = salt['pillar.get']('default:OMV_SYSTEMD_TASK_PREFIX', 'omv-task-') -%}
+{%- set spc = ' ' -%}
+{% set dow_names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] -%}
+
+{{ pillar['headers']['multiline'] -}}
+[Unit]
+Description=Timer for {{ prefix ~ job.uuid ~ '.service'}}
+
+[Timer]
+OnCalendar={% if job.execution == "exactly" -%}
+{% if job.dayofweek != '*' -%} 
+{% set job_dow_list = job.dayofweek.split(',') -%}
+{% set dow_list = [] -%}
+{% for job_dow in job_dow_list -%}
+{% set i = job_dow | int -%}
+{% do dow_list.append(dow_names[i]) -%}
+{% endfor -%}
+{% set dow = dow_list | join(',') -%}
+{{ dow }}{{ spc }}{% endif -%}
+*-{{ job.month -}}
+-{% if job.everyndayofmonth | to_bool %}1/{{ job.dayofmonth }}{% else %}{{ job.dayofmonth }}{% endif -%}
+{{ spc }}{% if job.everynhour | to_bool %}0/{{ job.hour }}:{% else %}{{ job.hour }}:{% endif -%}
+{% if job.everynminute | to_bool %}0/{{ job.minute }}:00{% else %}{{ job.minute }}:00{% endif %}
+{% else -%}
+{{ job.execution }}
+{% endif -%}
+Persistent=true
+Unit={{ prefix ~ job.uuid ~ '.service' }}
+RandomizedDelaySec={{ random_delay }}m
+
+[Install]
+WantedBy=timers.target

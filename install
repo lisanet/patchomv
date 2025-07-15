@@ -5,7 +5,6 @@ prefix=/usr/local
 echo "Installing patchomv utility..."
 
 sudo cp patchomv "$prefix"/bin
-sudo cp cron2timer "$prefix"/bin
 
 mkdir -p "$prefix"/share/patchomv
 sudo cp share-patchomv/* "$prefix"/share/patchomv
