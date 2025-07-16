@@ -267,6 +267,8 @@ function cron_timer()
   file_changed task_timer.j2 cron/files/task_timer.j2 && change="yes"
   if [ "$change" = "yes" ]; then
     log "Use systemd timers for cron"
+    sudo rm -f "$deploy/cron/20userdefined.sls"
+    sudo rm -f "$deploy/cron/files/userdefined.j2"
     apply_salt="yes"
     category="$category\ncron"
   fi
@@ -276,21 +278,13 @@ function cron_timer()
 
 function rsync_timer()
 {
-  if [ "$1" = "delete" ]; then
-    sudo cp /srv/salt/omv/deploy/rsync/10rsync-cron.sls srv/salt/omv/deploy/rsync/default.sls
-    sudo rm -f "$deploy/rsync/10rsync-cron.sls" "$deploy/rsync/20rsync-timer.sls"
-    return
-  fi
-
   change=no
-  grep -q "configure_rsync_cron" /srv/salt/omv/deploy/rsync/default.sls && change="yes"
-  file_changed 30rsync-systemd.sls rsync/30rsync-systemd.sls && change="yes"
+  file_changed 30rsync-systemd.sls rsync/default.sls && change="yes"
   file_changed rsync_service.j2 rsync/files/rsync_service.j2 && change="yes"
   file_changed rsync_timer.j2 rsync/files/rsync_timer.j2 && change="yes"
   if [ "$change" = "yes" ]; then
     log "Use systemd timers for rsync"
-    sudo cp /srv/salt/omv/deploy/rsync/default.sls /srv/salt/omv/deploy/rsync/10rsync-cron.sls
-    sudo cp "$data/default.sls" "$deploy/rsync/default.sls"
+    sudo rm -f "$deploy/rsync/files/cron-rsync.j2"
     apply_salt=yes
     category="$category\nrsync"
   fi
