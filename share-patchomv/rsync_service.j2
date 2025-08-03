@@ -1,5 +1,5 @@
 {%- set user = salt['pillar.get']('default:OMV_RSYNC_CRONUSER', 'root') -%}
-{%- set prefix = salt['pillar.get']('default:OMV_SYSTEMD_RSYNC_PREFIX', 'omv-rsync-') -%}
+{% set prefix = salt['pillar.get']('default:OMV_RSYNC_CRONSCRIPT_PREFIX', 'rsync-') %}
 {%- set spc = ' ' -%}
 
 {{ pillar['headers']['multiline'] -}}
