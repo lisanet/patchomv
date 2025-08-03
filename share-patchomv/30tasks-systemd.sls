@@ -10,6 +10,8 @@
   {'operator': 'stringEquals', 'arg0': 'type', 'arg1': 'userdefined'}) %}
 {% set systemd_dir = salt['pillar.get']('default:OMV_SYSTEMD_DIR', '/var/lib/openmediavault/systemd') %}
 {% set prefix = salt['pillar.get']('default:OMV_SYSTEMD_TASK_PREFIX', 'omv-task-') %}
+{% set scripts_dir = salt['pillar.get']('default:OMV_CRONSCRIPTS_DIR', '/var/lib/openmediavault/cron.d') %}
+{% set script_prefix = salt['pillar.get']('default:OMV_CRONTAB_USERDEFINED_PREFIX', 'userdefined-') %}
 
 {% set services = salt['file.find'](path = '/etc/systemd/system', name = prefix ~ '*.service') %}
 {% for service_path in services %}
@@ -28,11 +30,18 @@ stop_disable_{{ service }}:
 
 {% endfor %}
 
-remove_task_systemd_scripts_units:
+remove_task_systemd_units:
   module.run:
     - file.find:
       - path: "{{ systemd_dir }}"
       - iname: "{{ prefix }}*"
+      - delete: "f"
+
+remove_task_systemd_scripts:
+  module.run:
+    - file.find:
+      - path: "{{ scripts_dir }}"
+      - iname: "{{ script_prefix }}*"
       - delete: "f"
 
 create_task_systemd_dir:
@@ -40,12 +49,17 @@ create_task_systemd_dir:
     - name: "{{ systemd_dir }}"
     - makedirs: True
 
+create_task_scripts_dir:
+  file.directory:
+    - name: "{{ scripts_dir }}"
+    - makedirs: True
+
 {% for job in jobs | selectattr('enable')%}
 {% set service = prefix ~ job.uuid ~ '.service' %}
 {% set timer = prefix ~ job.uuid ~ '.timer' %}
 {% set service_path = systemd_dir | path_join(service) %}
 {% set timer_path = systemd_dir | path_join(timer) %}
-{% set script_path = systemd_dir | path_join(prefix ~ job.uuid) %}
+{% set script_path = scripts_dir | path_join(script_prefix ~ job.uuid) %}
 
 create_task_systemd_{{ job.uuid }}_script:
   file.managed:
@@ -96,15 +110,6 @@ link_enable_{{ job.uuid }}_timer_service:
 
 {% endif %}
 {% endfor %}
-
-{% set scripts_dir = salt['pillar.get']('default:OMV_CRONSCRIPTS_DIR', '/var/lib/openmediavault/cron.d') %}
-{% set script_prefix = salt['pillar.get']('default:OMV_CRONTAB_USERDEFINED_PREFIX', 'userdefined-') %}
-transition_remove_cron_userdefined_scripts:
-  module.run:
-    - file.find:
-      - path: "{{ scripts_dir }}"
-      - iname: "{{ script_prefix }}*"
-      - delete: "f"
 
 transition_remove_cron_userdefined_crontab:
   file.absent:

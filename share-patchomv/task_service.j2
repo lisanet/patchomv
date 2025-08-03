@@ -1,4 +1,4 @@
-{%- set prefix = salt['pillar.get']('default:OMV_SYSTEMD_TASK_PREFIX', 'omv-task-') -%}
+{% set prefix = salt['pillar.get']('default:OMV_CRONTAB_USERDEFINED_PREFIX', 'userdefined-') %}
 {%- set spc = ' ' -%}
 
 {{ pillar['headers']['multiline'] -}}
