@@ -1,0 +1,45 @@
+diff --git a/usr/sbin/autoshutdown b/usr/sbin/autoshutdown
+index f1418ef..3036c84 100755
+--- a/usr/sbin/autoshutdown
++++ b/usr/sbin/autoshutdown
+@@ -348,6 +348,31 @@ _check_processes() {
+ }
+ 
+ 
++###############################################################################
++#
++#   Name       : _check_plex_streams
++#   Description: Checks if there are any active Plex streams.
++#   Parameters : None
++#   Globals    : PLEX_TOKEN : If set, run the Plex check.
++#   Return     : 0 : If ther are no active Plex streams, ready for shutdown.
++#              : 1 : If there are active Plex streams, no shutdown.
++#
++
++_check_plex_streams() {
++    [ -z "$PLEX_TOKEN" ] && return 0
++
++    local playing
++    playing=$(curl -s -H "accept: application/json" "http://localhost:32400/status/sessions/?X-Plex-Token=$PLEX_TOKEN" | jq .MediaContainer.size)
++
++    local msg="INFO: Found ${playing} active Plex streams -> "
++    [ "${playing}" -eq 0 ] && {
++        _log "${msg}next check"
++        return 0; }
++
++    _log "${msg}no shutdown"
++    return 1
++}
++
+ ###############################################################################
+ #
+ #   Name       : _check_plugin
+@@ -1406,6 +1431,8 @@ _check_system_active() {
+     # PRIO 5: Do a check for some active processes.
+     __run_check "${CHECKPROCNAMES}" _check_processes || return 1
+ 
++    __run_check "true" _check_plex_streams || return 1
++
+     # PRIO 6: Do a load average check.
+     __run_check "${LOADAVERAGECHECK}" _check_loadaverage || return 1
+ 

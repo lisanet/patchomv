@@ -223,6 +223,21 @@ function show_users_group()
 }
 
 
+function plex_check_autoshutdown()
+{
+  change="no"
+  grep -q 'check_plex_streams' /usr/sbin/autoshutdown || change="yes"
+  if [ "$change" = "yes" ]; then
+    echo "Add check for Plex streams in autoshutdown"
+    cd /usr/sbin
+    patch -p3 < "$data/autoshutdown.diff"
+    # delete config to trigger restart of script
+    sudo rm /etc/autoshutdown.conf
+    apply_salt="yes"
+    category="$category\nautoshutdown"
+  fi
+}
+
 # --- functions which don't modify source and are still there after updates
 
 function samba_global_mac()
@@ -360,6 +375,7 @@ hostname_case
 optional_domainname
 #change_background
 show_users_group
+plex_check_autoshutdown
 
 # don't remove this line
 finally_write_env
