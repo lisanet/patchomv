@@ -19,12 +19,19 @@ divert_hdparm_conf:
   omv_dpkg.divert_add:
     - name: "/etc/hdparm.conf"
 
+{% for device in config | selectattr('devicefile', 'is_block_device') %}
+disable_smartmontools_hdparm_{{ device.uuid }}:
+  file.replace:
+    - name: "/etc/smartmontools/hdparm.d/openmediavault-{{ device.uuid }}"
+    - pattern: ' smartctl'
+    - repl: ' #smartctl'
+    - backup: False
+
 # Usually '/lib/udev/hdparm' is executed by UDEV when a device is added
 # to apply the hdparm.conf settings. At runtime it is not possible to
 # force UDEV to do the same thing again to reload the settings, e.g.
 # by running 'udevadm trigger'. For this reason, we simply run the script
 # ourselves.
-{% for device in config | selectattr('devicefile', 'is_block_device') %}
 reload_hdparm_{{ device.devicefile }}:
   cmd.run:
     - name: "/lib/udev/hdparm"

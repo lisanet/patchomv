@@ -259,7 +259,6 @@ function enable_hdparm()
 {
   change=no
   [ "$1" = "delete" ] && _delete="yes"
-  file_changed 21hdparm.sls smartmontools/21hdparm.sls && change="yes"
   file_changed 22hdparm.sls smartmontools/22hdparm.sls && change="yes"
   file_changed etc-hdparm.conf.j2 smartmontools/files/etc-hdparm.conf.j2 && change="yes"
   if [ "$change" = "yes" ]; then
