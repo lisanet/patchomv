@@ -22,7 +22,7 @@ OnCalendar={% if job.dayofweek != '*' -%}
 {{ spc }}{% if job.everynhour | to_bool %}0/{{ job.hour }}:{% else %}{{ job.hour }}:{% endif -%}
 {% if job.everynminute | to_bool %}0/{{ job.minute }}:00{% else %}{{ job.minute }}:00{% endif %}
 Persistent=true
-Unit={{ prefix ~ job.uuid ~ '.service' }}
+Unit={{ prefix ~ rsync_id ~ '.service' }}
 RandomizedDelaySec={{ random_delay }}m
 
 [Install]

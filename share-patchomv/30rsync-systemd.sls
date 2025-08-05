@@ -52,8 +52,9 @@ create_rsync_scripts_dir:
     - makedirs: True
 
 {% for job in jobs | selectattr('enable')%}
-{% set service = prefix ~ job.uuid ~ '.service' %}
-{% set timer = prefix ~ job.uuid ~ '.timer' %}
+{% set rsync_id = loop.index ~ '-' ~ job.uuid[:8] %}
+{% set service = prefix ~ rsync_id ~ '.service' %}
+{% set timer = prefix ~ rsync_id ~ '.timer' %}
 {% set service_path = systemd_dir | path_join(service) %}
 {% set timer_path = systemd_dir | path_join(timer) %}
 {% set script_path = scripts_dir | path_join(script_prefix ~ job.uuid) %}
@@ -91,6 +92,7 @@ create_rsync_systemd_{{ job.uuid }}_timer:
     - template: jinja
     - context:
         job: {{ job | json }}
+        rsync_id: "{{ rsync_id }}"
     - user: root
     - group: root
     - mode: 644
