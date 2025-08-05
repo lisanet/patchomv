@@ -5,7 +5,7 @@
 
 {{ pillar['headers']['multiline'] -}}
 [Unit]
-Description=Timer for {{ prefix ~ job.uuid ~ '.service'}}
+Description=Timer for {{ prefix ~ task_id ~ '.service'}}
 
 [Timer]
 OnCalendar={% if job.execution == "exactly" -%}
@@ -26,7 +26,7 @@ OnCalendar={% if job.execution == "exactly" -%}
 {{ job.execution }}
 {% endif -%}
 Persistent=true
-Unit={{ prefix ~ job.uuid ~ '.service' }}
+Unit={{ prefix ~ task_id ~ '.service' }}
 RandomizedDelaySec={{ random_delay }}m
 
 [Install]
