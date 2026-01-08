@@ -32,12 +32,12 @@ disable_smartmontools_hdparm_{{ device.uuid }}:
 # force UDEV to do the same thing again to reload the settings, e.g.
 # by running 'udevadm trigger'. For this reason, we simply run the script
 # ourselves.
+# we run this, regardless of wether the configuration has changed or not,
+# because an update of omv may change the smartcontrol settings
 reload_hdparm_{{ device.devicefile }}:
   cmd.run:
     - name: "/lib/udev/hdparm"
     - env:
       - DEVNAME: "{{ device.devicefile }}"
-#    - onchanges:
-#      - file: configure_hdparm_conf
 {% endfor %}
 
