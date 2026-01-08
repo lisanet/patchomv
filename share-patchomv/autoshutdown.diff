@@ -1,5 +1,37 @@
+diff --git a/etc/autoshutdown.default b/etc/autoshutdown.default
+index e959eb1..480e62e 100644
+--- a/etc/autoshutdown.default
++++ b/etc/autoshutdown.default
+@@ -231,6 +231,14 @@ PLUGINCHECK="false"
+     # To delete all *.status files, which are not deleted before (loss of power
+     # for example).
+ 
++# -----------------------------------------------------------------------------
++
++CHECKPLEX="false"
++    # Check a locally running Plex Media Server, if there are active streams
++
++PLEX_TOKEN=""
++    # Your authentication Plex PLEX_TOKEN
++    # See https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
+ 
+ ###############################################################################
+ # Syslog Configuration
+diff --git a/srv/salt/omv/deploy/autoshutdown/files/etc-autoshutdown_conf.j2 b/srv/salt/omv/deploy/autoshutdown/files/etc-autoshutdown_conf.j2
+index e32c929..8f7be76 100644
+--- a/srv/salt/omv/deploy/autoshutdown/files/etc-autoshutdown_conf.j2
++++ b/srv/salt/omv/deploy/autoshutdown/files/etc-autoshutdown_conf.j2
+@@ -42,6 +42,8 @@ PLUGINCHECK="{{ config.plugincheck | to_bool | lower }}"
+ SYSLOG="{{ config.syslog | to_bool | lower }}"
+ VERBOSE="{{ config.verbose | to_bool | lower }}"
+ FAKE="{{ config.fake | to_bool | lower }}"
++CHECKPLEX="{{ config.checkplex | to_bool | lower }}"
++PLEX_TOKEN="{{ config.plextoken }}"
+ {%- if config.extraoptions | length > 0 %}
+ {{ config.extraoptions }}
+ {%- endif %}
 diff --git a/usr/sbin/autoshutdown b/usr/sbin/autoshutdown
-index f1418ef..3036c84 100755
+index 77f0ba4..d11bb2b 100755
 --- a/usr/sbin/autoshutdown
 +++ b/usr/sbin/autoshutdown
 @@ -348,6 +348,31 @@ _check_processes() {
@@ -17,10 +49,9 @@ index f1418ef..3036c84 100755
 +#
 +
 +_check_plex_streams() {
-+    [ -z "$PLEX_TOKEN" ] && return 0
-+
 +    local playing
 +    playing=$(curl -s -H "accept: application/json" "http://localhost:32400/status/sessions/?X-Plex-Token=$PLEX_TOKEN" | jq .MediaContainer.size)
++    playing=${playing:-0}
 +
 +    local msg="INFO: Found ${playing} active Plex streams -> "
 +    [ "${playing}" -eq 0 ] && {
@@ -31,15 +62,125 @@ index f1418ef..3036c84 100755
 +    return 1
 +}
 +
++
  ###############################################################################
  #
  #   Name       : _check_plugin
-@@ -1406,6 +1431,8 @@ _check_system_active() {
-     # PRIO 5: Do a check for some active processes.
-     __run_check "${CHECKPROCNAMES}" _check_processes || return 1
+@@ -1391,6 +1416,8 @@ _check_system_active() {
+     __run_check "${CHECK_CLI}" _check_users_status || return 1
+     # PRIO 2: Check Samba for connected clients.
+     __run_check "${CHECK_SAMBA}" _check_smb_status || return 1
++    # PRIO 2: Check Plex for active streams.
++    __run_check "${CHECKPLEX}" _check_plex_streams || return 1
  
-+    __run_check "true" _check_plex_streams || return 1
+     for net_iface in "${NICS[@]}"; do
+         # PRIO 3: Do a check for ul-dl-rate across active network interfaces.
+diff --git a/usr/share/openmediavault/confdb/create.d/conf.service.autoshutdown.sh b/usr/share/openmediavault/confdb/create.d/conf.service.autoshutdown.sh
+index 5fa2267..a2970c9 100755
+--- a/usr/share/openmediavault/confdb/create.d/conf.service.autoshutdown.sh
++++ b/usr/share/openmediavault/confdb/create.d/conf.service.autoshutdown.sh
+@@ -61,6 +61,8 @@ if ! omv_config_exists "${SERVICE_XPATH}"; then
+     omv_config_add_key "${SERVICE_XPATH}" "syslog" "1"
+     omv_config_add_key "${SERVICE_XPATH}" "verbose" "0"
+     omv_config_add_key "${SERVICE_XPATH}" "fake" "0"
++    omv_config_add_key "${SERVICE_XPATH}" "checkplex" "0"
++    omv_config_add_key "${SERVICE_XPATH}" "plextoken" ""
+     omv_config_add_key "${SERVICE_XPATH}" "extraoptions" ""
+ fi
+ 
+diff --git a/usr/share/openmediavault/confdb/migrations.d/conf.service.autoshutdown_8.0.sh b/usr/share/openmediavault/confdb/migrations.d/conf.service.autoshutdown_8.0.sh
+new file mode 100644
+index 0000000..afaac4e
+--- /dev/null
++++ b/usr/share/openmediavault/confdb/migrations.d/conf.service.autoshutdown_8.0.sh
+@@ -0,0 +1,11 @@
++set -e
 +
-     # PRIO 6: Do a load average check.
-     __run_check "${LOADAVERAGECHECK}" _check_loadaverage || return 1
- 
++. /usr/share/openmediavault/scripts/helper-functions
++
++SERVICE_XPATH_NAME="autoshutdown"
++SERVICE_XPATH="/config/services/${SERVICE_XPATH_NAME}"
++
++omv_config_add_key "${SERVICE_XPATH}" "checkplex" "0"
++omv_config_add_key "${SERVICE_XPATH}" "plextoken" ""
++
++exit 0
+\ No newline at end of file
+diff --git a/usr/share/openmediavault/datamodels/conf.service.autoshutdown.json b/usr/share/openmediavault/datamodels/conf.service.autoshutdown.json
+index 07f39b4..5ff1614 100644
+--- a/usr/share/openmediavault/datamodels/conf.service.autoshutdown.json
++++ b/usr/share/openmediavault/datamodels/conf.service.autoshutdown.json
+@@ -151,6 +151,14 @@
+ 			"type": "boolean",
+ 			"default": false
+ 		},
++		"checkplex": {
++			"type": "boolean",
++			"default": false
++		},
++		"plextoken": {
++			"type": "string",
++			"default": ""
++		},
+ 		"syslog": {
+ 			"type": "boolean",
+ 			"default": true
+diff --git a/usr/share/openmediavault/datamodels/rpc.autoshutdown.json b/usr/share/openmediavault/datamodels/rpc.autoshutdown.json
+index e240046..def6a6b 100644
+--- a/usr/share/openmediavault/datamodels/rpc.autoshutdown.json
++++ b/usr/share/openmediavault/datamodels/rpc.autoshutdown.json
+@@ -148,6 +148,14 @@
+ 				"type": "boolean",
+ 				"required": false
+ 			},
++			"checkplex": {
++				"type": "boolean",
++				"required": false
++			},
++			"plextoken": {
++				"type": "string",
++				"required": false
++			},
+ 			"syslog": {
+ 				"type": "boolean",
+ 				"required": true
+diff --git a/usr/share/openmediavault/workbench/component.d/omv-services-autoshutdown-form-page.yaml b/usr/share/openmediavault/workbench/component.d/omv-services-autoshutdown-form-page.yaml
+index 65cdd4d..06bf036 100644
+--- a/usr/share/openmediavault/workbench/component.d/omv-services-autoshutdown-form-page.yaml
++++ b/usr/share/openmediavault/workbench/component.d/omv-services-autoshutdown-form-page.yaml
+@@ -370,6 +370,35 @@ data:
+                   prop: checkprocnames
+             rows: 1
+             hint: _("Names of processes only started when active. Set to '-' to disable.")
++      - type: container
++        fields:
++          - type: checkbox
++            name: checkplex
++            label: _("Active Plex Streams")
++            value: false
++            flex: 20
++            hint: _("Check for active Plex streams (Plex Media Server must be installed).")
++          - type: textarea
++            name: plextoken
++            value: ""
++            modifiers:
++              - type: enabled
++                constraint:
++                  operator: truthy
++                  arg0:
++                    prop: checkplex
++            validators:
++              pattern:
++                pattern: ^[a-zA-Z0-9-]*$
++                errorData: >
++                  _("Plex token must only contain alphanumeric characters and dashes.")
++              requiredIf:
++                operator: truthy
++                arg0:
++                  prop: checkplex
++            rows: 1
++            hint: >
++              _("Your authentication Plex Token. (See <a href='https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/' target='_blank'>How to obtain your Plex Token</a>).")
+       - type: checkbox
+         name: checksamba
+         label: _("SMB Status")
