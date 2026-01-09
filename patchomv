@@ -234,8 +234,8 @@ function plex_check_autoshutdown()
     echo "Add check for Plex streams in autoshutdown"
     cd /
     sudo patch -p1 < "$data/autoshutdown-plex.diff"
-    sudo chmod a+x /usr/share/openmediavault/confdb/migrations.d/conf.service.autoshutdown_7.0.5.sh
-    sudo /usr/share/openmediavault/confdb/migrations.d/conf.service.autoshutdown_7.0.5.sh
+    sudo chmod a+x /usr/share/openmediavault/confdb/migrations.d/conf.service.autoshutdown_8.0.sh
+    sudo /usr/share/openmediavault/confdb/migrations.d/conf.service.autoshutdown_8.0.sh
     sudo omv-mkworkbench all
     # delete config to trigger restart of script
     sudo rm /etc/autoshutdown.conf
