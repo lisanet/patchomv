@@ -270,6 +270,10 @@ function enable_hdparm()
   if [ "$change" = "yes" ]; then
     log "disable smartctl-hdparm"
     log "enable hdparm"
+    if [ ! -e /usr/sbin/hdparm ]; then
+      log "Installing hdparm package"
+      sudo apt install -y hdparm
+    fi
     sudo rm -f /etc/hdparm.conf
     apply_salt="yes"
     category="$category\nsmartmontools"
@@ -371,7 +375,7 @@ rsync_timer
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
 sharename_spaces
 samba_aapl
-gui_store_dos_attr
+# gui_store_dos_attr
 identifier_spaces
 usb_raid
 apply_confirmation
