@@ -1,0 +1,25 @@
+--- sharemgmt.inc.orig	2026-01-10 14:14:57.123437045 +0100
++++ sharemgmt.inc	2026-01-10 14:32:26.938725400 +0100
+@@ -1122,6 +1122,8 @@
+ 						$entryv['name'], $entryv['perms']);
+ 				}
+ 			}
++			// only set default acl if named users / groups exist
++			if (!empty($aclSpec)) {
+ 			// Set default owner permissions.
+ 			if (array_key_exists("userperms", $params)) {
+ 				$aclSpec[] = sprintf("default:user::%d", $params['userperms']);
+@@ -1154,6 +1156,13 @@
+ 				$cmdArgs[] = sprintf("-M %s", escapeshellarg(
+ 					$aclSpecFile->getFileName()));
+ 			}
++			} else {
++				// delete acl if no named users / groups
++				$cmdArgs = ["--remove-all"];
++				if (TRUE === boolvalEx($params['recursive'])) {
++					$cmdArgs[] = "--recursive";
++				}
++			}
+ 			$cmdArgs[] = "--";
+ 			$cmdArgs[] = escapeshellarg(build_path(DIRECTORY_SEPARATOR,
+ 				$sfpath, $params['file']));

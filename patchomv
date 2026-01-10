@@ -222,6 +222,16 @@ function show_users_group()
   fi
 }
 
+function manage_default_acl()
+{
+  change="no"
+  grep -q "only set default acl"  /usr/share/openmediavault/engined/rpc/sharemgmt.inc || change="yes"
+  if [ "$change" = "yes" ]; then
+    echo "Fix management of default ACLs"
+    cd /usr/share/openmediavault/engined/rpc
+    sudo patch -p0 < "$data/sharemgmt.inc.diff"
+  fi
+}
 
 function plex_check_autoshutdown()
 {
@@ -384,6 +394,7 @@ hostname_case
 optional_domainname
 #change_background
 show_users_group
+manage_default_acl
 plex_check_autoshutdown
 
 # don't remove this line
