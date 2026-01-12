@@ -228,7 +228,7 @@ function samba_global_mac()
   [ "$1" = "delete" ] && _delete="yes"
   file_changed 11global.sls samba/11global.sls && change="yes"
   file_changed global-mac.j2 samba/files/global-mac.j2 && change="yes"
-  if [ "$change" = "yes" ]; then
+  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
     log "Modifying samba global"
     apply_salt="yes"
     category="$category\nsamba"
@@ -243,7 +243,7 @@ function enable_hdparm()
   [ "$1" = "delete" ] && _delete="yes"
   file_changed 22hdparm.sls smartmontools/22hdparm.sls && change="yes"
   file_changed etc-hdparm.conf.j2 smartmontools/files/etc-hdparm.conf.j2 && change="yes"
-  if [ "$change" = "yes" ]; then
+  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
     log "disable smartctl-hdparm"
     log "enable hdparm"
     if [ ! -e /usr/sbin/hdparm ]; then
@@ -265,29 +265,31 @@ function cron_timer()
   file_changed 30tasks-systemd.sls cron/30tasks-systemd.sls && change="yes"
   file_changed task_service.j2 cron/files/task_service.j2 && change="yes"
   file_changed task_timer.j2 cron/files/task_timer.j2 && change="yes"
-  if [ "$change" = "yes" ]; then
+  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
     log "Use systemd timers for cron"
     sudo rm -f "$deploy/cron/20userdefined.sls"
     sudo rm -f "$deploy/cron/files/userdefined.j2"
     apply_salt="yes"
     category="$category\ncron"
   fi
-  _delete=no
+  c
 }
 
 
 function rsync_timer()
 {
   change=no
+  [ "$1" = "delete" ] && _delete="yes"
   file_changed 30rsync-systemd.sls rsync/default.sls && change="yes"
   file_changed rsync_service.j2 rsync/files/rsync_service.j2 && change="yes"
   file_changed rsync_timer.j2 rsync/files/rsync_timer.j2 && change="yes"
-  if [ "$change" = "yes" ]; then
+  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
     log "Use systemd timers for rsync"
     sudo rm -f "$deploy/rsync/files/cron-rsync.j2"
     apply_salt=yes
     category="$category\nrsync"
   fi
+  [ "$1" = "delete" ] && _delete="yes"
 }
 
 
@@ -297,7 +299,7 @@ function avahi_no_count_hostname()
   [ "$1" = "delete" ] && _delete="yes"
   file_changed 21configure.sls avahi/21configure.sls && change="yes"
   file_changed etc-avahi-avahi-daemon_conf_no2.j2 avahi/files/etc-avahi-avahi-daemon_conf_no2.j2 && change="yes"
-  if [ "$change" = "yes" ]; then
+  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
     log "Avahi no -2 hostnames"
     apply_salt="yes"
     category="$category\navahi"
@@ -345,6 +347,7 @@ set_env samba OMV_SAMBA_SHARE_FRUIT_RESOURCE xattr
 
 # modify settings using salt
 # to delete a modification, add 'delete' as parameter to the function, e.g: enable_hdparm delete
+# AND wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
 avahi_no_count_hostname
 enable_hdparm
 samba_global_mac
