@@ -272,7 +272,7 @@ function cron_timer()
     apply_salt="yes"
     category="$category\ncron"
   fi
-  c
+  _delete=no
 }
 
 
