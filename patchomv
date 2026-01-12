@@ -103,27 +103,6 @@ function apply_confirmation()
 
 }
 
-# function samba_aapl()
-# {
-#   # use fruit stream_xattr if OMV_AAPL = yes
-#   grep -q "enable_timemachine_vfs |" "$deploy"/samba/files/shares.j2 && change=yes || change=no
-#   if [ "$change" = "yes" ]; then
-#     echo "Use fruit in shares if aapl"
-#     cat "$data"/09aapl.j2 "$deploy"/samba/files/shares.j2 | sed -e "s/enable_timemachine_vfs/fruit_aapl/" > /tmp/samba_aapl
-#     sudo cp /tmp/samba_aapl "$deploy"/samba/files/shares.j2
-#     apply_salt="yes"
-#     category="$category\nsamba"
-#   fi
-#   grep -q "enable_timemachine_vfs |" "$deploy"/samba/files/homes.j2 && change=yes || change=no
-#   if [ "$change" = "yes" ]; then
-#     echo "Use fruit in homes if aapl"
-#     cat "$data"/09aapl.j2 "$deploy"/samba/files/homes.j2 | sed -e "s/enable_timemachine_vfs/fruit_aapl/" > /tmp/samba_aapl
-#     sudo cp /tmp/samba_aapl "$deploy"/samba/files/homes.j2
-#     apply_salt="yes"
-#     category="$category\nsamba"
-#   fi
-# }
-
 function sharename_spaces()
 {
   # allow spaces in share names
@@ -133,17 +112,6 @@ function sharename_spaces()
     sudo sed -i -e 's/:+|<>=;,\*?\. ]/:+|<>=;,\*?\.]/g' "$file"
   fi
 }
-
-# function gui_store_dos_attr()
-# {
-#   # set omv gui to samba default of smb.conf
-#   file=$(grep -l 'or directory."),value:!1' /var/www/openmediavault/*js)
-#   if [ -n "$file" ]; then
-#     echo "Set default GUI 'Store DOS Attributes' to yes for new shares"
-#     sudo sed -i -e 's/or directory."),value:!1/or directory."),value:!0/' "$file"
-#   fi
-# }
-
 
 function identifier_spaces()
 {
@@ -190,11 +158,9 @@ function optional_domainname ()
 
 function nocursor()
 {
-#  styles=$(grep -l 'busy{cursor:url(data:image.\{5733\}auto' /var/www/openmediavault/styles*css)
   styles=$(grep -l 'amiga20-busy{cursor:url' /var/www/openmediavault/styles*css)
   if [ -n "$styles" ]; then
     echo "Removing pixelated cursor in css"
-#    sudo sed -i".bak" -e 's|busy{cursor:url(data:image.\{5733\}auto|busy{cursor:wait,auto|g' "$styles"
     sudo sed -i -e 's|amiga20-busy.*amiga13-select|amiga20-busy{cursor:wait,auto}\.omv-cursor-amiga13-select|' "$styles"
   fi
 }
@@ -388,8 +354,6 @@ rsync_timer
 # modify source code
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
 sharename_spaces
-# samba_aapl
-# gui_store_dos_attr
 identifier_spaces
 usb_raid
 apply_confirmation
