@@ -165,18 +165,6 @@ function nocursor()
   fi
 }
 
-
-# function change_background()
-# {
-#   [ ! -e "$data/background.jpg" ] && return
-#   change=$(cmp "$data/background.jpg" /var/www/openmediavault/assets/images/login.jpg)
-#   if [ -n "$change" ]; then
-#     echo "Set custom background"
-#     sudo cp "$data/background.jpg" /var/www/openmediavault/assets/images/login.jpg
-#   fi
-# }
-
-
 function show_users_group()
 {
   change="no"
@@ -363,7 +351,6 @@ apply_confirmation
 nocursor
 hostname_case
 optional_domainname
-#change_background
 show_users_group
 manage_default_acl
 plex_check_autoshutdown
