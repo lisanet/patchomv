@@ -359,6 +359,10 @@ set_env avahi OMV_RSYNC_ZEROCONF_NAME "%h"
 set_env avahi OMV_SSHD_ZEROCONF_NAME "%h"
 set_env avahi OMV_WEBGUI_ZEROCONF_NAME "%h"
 set_env avahi OMV_SAMBA_ZEROCONF_NAME "%h"
+# ensure mac specific samba settings
+set_env samba OMV_SAMBA_FRUIT_AAPL yes
+set_env samba OMV_SAMBA_SHARE_VFSOBJECTS "fruit streams_xattr"
+set_env samba OMV_SAMBA_HOMES_VFSOBJECTS "fruit streams_xattr"
 # Mac style UNIX permissions, used when setting fruit:nfs_aces=no
 set_env samba OMV_SAMBA_CREATEMASK 0644
 set_env samba OMV_SAMBA_DIRECTORYMASK 0755
@@ -384,7 +388,7 @@ rsync_timer
 # modify source code
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
 sharename_spaces
-samba_aapl
+# samba_aapl
 # gui_store_dos_attr
 identifier_spaces
 usb_raid
