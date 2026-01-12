@@ -103,26 +103,26 @@ function apply_confirmation()
 
 }
 
-function samba_aapl()
-{
-  # use fruit stream_xattr if OMV_AAPL = yes
-  grep -q "enable_timemachine_vfs |" "$deploy"/samba/files/shares.j2 && change=yes || change=no
-  if [ "$change" = "yes" ]; then
-    echo "Use fruit in shares if aapl"
-    cat "$data"/09aapl.j2 "$deploy"/samba/files/shares.j2 | sed -e "s/enable_timemachine_vfs/fruit_aapl/" > /tmp/samba_aapl
-    sudo cp /tmp/samba_aapl "$deploy"/samba/files/shares.j2
-    apply_salt="yes"
-    category="$category\nsamba"
-  fi
-  grep -q "enable_timemachine_vfs |" "$deploy"/samba/files/homes.j2 && change=yes || change=no
-  if [ "$change" = "yes" ]; then
-    echo "Use fruit in homes if aapl"
-    cat "$data"/09aapl.j2 "$deploy"/samba/files/homes.j2 | sed -e "s/enable_timemachine_vfs/fruit_aapl/" > /tmp/samba_aapl
-    sudo cp /tmp/samba_aapl "$deploy"/samba/files/homes.j2
-    apply_salt="yes"
-    category="$category\nsamba"
-  fi
-}
+# function samba_aapl()
+# {
+#   # use fruit stream_xattr if OMV_AAPL = yes
+#   grep -q "enable_timemachine_vfs |" "$deploy"/samba/files/shares.j2 && change=yes || change=no
+#   if [ "$change" = "yes" ]; then
+#     echo "Use fruit in shares if aapl"
+#     cat "$data"/09aapl.j2 "$deploy"/samba/files/shares.j2 | sed -e "s/enable_timemachine_vfs/fruit_aapl/" > /tmp/samba_aapl
+#     sudo cp /tmp/samba_aapl "$deploy"/samba/files/shares.j2
+#     apply_salt="yes"
+#     category="$category\nsamba"
+#   fi
+#   grep -q "enable_timemachine_vfs |" "$deploy"/samba/files/homes.j2 && change=yes || change=no
+#   if [ "$change" = "yes" ]; then
+#     echo "Use fruit in homes if aapl"
+#     cat "$data"/09aapl.j2 "$deploy"/samba/files/homes.j2 | sed -e "s/enable_timemachine_vfs/fruit_aapl/" > /tmp/samba_aapl
+#     sudo cp /tmp/samba_aapl "$deploy"/samba/files/homes.j2
+#     apply_salt="yes"
+#     category="$category\nsamba"
+#   fi
+# }
 
 function sharename_spaces()
 {
@@ -134,15 +134,15 @@ function sharename_spaces()
   fi
 }
 
-function gui_store_dos_attr()
-{
-  # set omv gui to samba default of smb.conf
-  file=$(grep -l 'or directory."),value:!1' /var/www/openmediavault/*js)
-  if [ -n "$file" ]; then
-    echo "Set default GUI 'Store DOS Attributes' to yes for new shares"
-    sudo sed -i -e 's/or directory."),value:!1/or directory."),value:!0/' "$file"
-  fi
-}
+# function gui_store_dos_attr()
+# {
+#   # set omv gui to samba default of smb.conf
+#   file=$(grep -l 'or directory."),value:!1' /var/www/openmediavault/*js)
+#   if [ -n "$file" ]; then
+#     echo "Set default GUI 'Store DOS Attributes' to yes for new shares"
+#     sudo sed -i -e 's/or directory."),value:!1/or directory."),value:!0/' "$file"
+#   fi
+# }
 
 
 function identifier_spaces()
@@ -200,15 +200,15 @@ function nocursor()
 }
 
 
-function change_background()
-{
-  [ ! -e "$data/background.jpg" ] && return
-  change=$(cmp "$data/background.jpg" /var/www/openmediavault/assets/images/login.jpg)
-  if [ -n "$change" ]; then
-    echo "Set custom background"
-    sudo cp "$data/background.jpg" /var/www/openmediavault/assets/images/login.jpg
-  fi
-}
+# function change_background()
+# {
+#   [ ! -e "$data/background.jpg" ] && return
+#   change=$(cmp "$data/background.jpg" /var/www/openmediavault/assets/images/login.jpg)
+#   if [ -n "$change" ]; then
+#     echo "Set custom background"
+#     sudo cp "$data/background.jpg" /var/www/openmediavault/assets/images/login.jpg
+#   fi
+# }
 
 
 function show_users_group()
