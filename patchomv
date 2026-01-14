@@ -126,6 +126,7 @@ function identifier_spaces()
 
 function usb_raid()
 {
+  [ ! -e /usr/share/openmediavault/engined/rpc/mdmgmt.inc ] && return
   grep -q "Skip.*connected via USB" /usr/share/openmediavault/engined/rpc/mdmgmt.inc && change=yes || change=no
   if [ "$change" = "yes" ]; then
     echo "Enable USB RAID"
