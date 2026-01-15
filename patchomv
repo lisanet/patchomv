@@ -212,11 +212,11 @@ function plex_check_autoshutdown()
 function samba_fruit_nfsaces()
 {
   [ ! -e "$data/fruit.so" ] && return
-  patched='2:4.22.6+dfsg-0+deb13u1'
+  patched="2:4.22.6"
   cmp -s "$data/fruit.so" /usr/lib/x86_64-linux-gnu/samba/vfs/fruit.so && change="no" || change="yes"
   if [ "$change" = "yes" ]; then
-    current=$(dpkg-query -f '${Version}' -W samba)
-    dpkg --compare-versions "$current" "gt" "$patched" && recompile="yes" || recompile="no"
+    current=$(dpkg-query -f '${Version}' -W samba | sed 's/+.*//')
+    [ "$current" = "$patched" ] && recompile="no" || recompile="yes"
     if [ "$recompile" = "yes" ]; then
       log "*** WARNING: fruit module must be recompiled for current samba version $current"
       return
