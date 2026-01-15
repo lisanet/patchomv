@@ -209,6 +209,24 @@ function plex_check_autoshutdown()
   fi
 }
 
+function samba_fruit_nfsaces()
+{
+  [ ! -e "$data/fruit.so" ] && return
+  patched='2:4.22.6+dfsg-0+deb13u1'
+  cmp -s "$data/fruit.so" /usr/lib/x86_64-linux-gnu/samba/vfs/fruit.so && change="no" || change="yes"
+  if [ "$change" = "yes" ]; then
+    current=$(dpkg-query -f '${Version}' -W samba)
+    dpkg --compare-versions "$current" "gt" "$patched" && recompile="yes" || recompile="no"
+    if [ "$recompile" = "yes" ]; then
+      log "*** WARNING: fruit module must be recompiled for current samba version $current"
+      return
+    fi
+    log "Use fruit module with nfs_aces_on_share support"
+    sudo cp "$data/fruit.so" /usr/lib/x86_64-linux-gnu/samba/vfs/fruit.so
+    sudo systemctl restart smbd
+  fi
+}
+
 # --- functions which don't modify source and are still there after updates
 
 function samba_global_mac()
@@ -358,4 +376,8 @@ plex_check_autoshutdown
 
 # don't remove this line
 finally_write_env
+
+# patched samba vfs fruit module
+# to undo this modification, first comment out the line and reinstall samba: sudo apt reinstall samba 
+samba_fruit_nfsaces
 
