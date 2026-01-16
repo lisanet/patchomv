@@ -190,7 +190,7 @@ function manage_default_acl()
 
 function plex_check_autoshutdown()
 {
-  echo "Please check autoshutdown manually!"
+  echo "Patch for autoshutdown disabled. Patch manually if needed."
   return
 
   change="no"
@@ -213,7 +213,14 @@ function samba_fruit_nfsaces()
 {
   [ ! -e "$data/fruit.so" ] && return
   patched="2:4.22.6"
-  cmp -s "$data/fruit.so" /usr/lib/x86_64-linux-gnu/samba/vfs/fruit.so && change="no" || change="yes"
+  file -b "$data/fruit.so" | grep -q x86-64 && arch="x86_64"
+  file -b "$data/fruit.so" | grep -q aarch64 && arch="aarch64"
+  march=$(arch)
+  if [ "$march" != "$arch" ]; then 
+    log "*** ERROR: Unsupported architecture '$arch' for fruit.so"
+    return
+  fi
+  cmp -s "$data/fruit.so" /usr/lib/${arch}-linux-gnu/samba/vfs/fruit.so && change="no" || change="yes"
   if [ "$change" = "yes" ]; then
     current=$(dpkg-query -f '${Version}' -W samba | sed 's/+.*//')
     [ "$current" = "$patched" ] && recompile="no" || recompile="yes"
@@ -222,7 +229,7 @@ function samba_fruit_nfsaces()
       return
     fi
     log "Use fruit module with nfs_aces_on_share support"
-    sudo cp "$data/fruit.so" /usr/lib/x86_64-linux-gnu/samba/vfs/fruit.so
+    sudo cp "$data/fruit.so" /usr/lib/${arch}-linux-gnu/samba/vfs/fruit.so
     sudo systemctl restart smbd
   fi
 }
