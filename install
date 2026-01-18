@@ -7,7 +7,7 @@ echo "Installing patchomv utility..."
 sudo cp patchomv "$prefix"/bin
 
 mkdir -p "$prefix"/share/patchomv
-sudo rsync -a --delete share-patchomv/ "$prefix"/share/patchomv/
+sudo rsync -a --delete --exclude fruit.so share-patchomv/ "$prefix"/share/patchomv/
 
 sudo cp 99patchomv /etc/apt/apt.conf.d
 
