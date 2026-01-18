@@ -5,11 +5,13 @@ prefix=/usr/local
 echo "Installing patchomv utility..."
 
 sudo cp patchomv "$prefix"/bin
+sudo cp patchsamba "$prefix"/bin
 
 mkdir -p "$prefix"/share/patchomv
 sudo rsync -a --delete --exclude fruit.so share-patchomv/ "$prefix"/share/patchomv/
 
 sudo cp 99patchomv /etc/apt/apt.conf.d
+sudo cp 99patchsamba /etc/apt/apt.conf.d
 
 echo "Done."
 

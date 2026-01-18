@@ -5,9 +5,11 @@ prefix=/usr/local
 echo "Uninstalling patchomv utility..."
 
 sudo rm -f "$prefix"/bin/patchomv
+sudo rm -f "$prefix"/bin/patchsamba
 
 sudo rm -rf "$prefix"/share/patchomv
 
 sudo rm -f  /etc/apt/apt.conf.d/99patchomv
+sudo rm -f  /etc/apt/apt.conf.d/99patchsamba
 
 echo "Done."

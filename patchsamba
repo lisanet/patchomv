@@ -1,0 +1,52 @@
+#!/bin/bash
+
+patched="2:4.22.6"
+data="/usr/local/share/patchomv"
+
+function log()
+{
+  echo "$1"
+}
+
+
+function samba_fruit_nfsaces()
+{
+  march=$(arch)
+
+  onlinesum=$(curl -s "https://api.github.com/repos/lisanet/patchomv/releases/latest" \
+     | jq -r --arg pat "$march" '.assets[] | select(.name | test($pat)) | .digest' | head -n 1)
+
+  tgz=$(find "$data" -name "fruit*$march*gz")
+  [ -e "$tgz" ] && checksum=$(sha256sum "$tgz" | awk '{print "sha256:" $1}')
+
+  if [ "$onlinesum" != "$checksum" ] || [ ! -e "$data/fruit.so" ]; then
+    # get latest fruit for architecture march
+    URL=$(curl -s "https://api.github.com/repos/lisanet/patchomv/releases/latest" \
+       | jq -r --arg pat "$march" '.assets[] | select(.name | test($pat)) | .browser_download_url' | head -n 1)
+    if [[ -z "$URL" ]]; then
+      log "No asset matching '$march' found for fruit.so"
+        return
+    fi
+    cd "$data"
+    curl -s -LO "$URL"
+    tar -xzf fruit*gz
+  fi
+
+  cmp -s "$data/fruit.so" /usr/lib/${march}-linux-gnu/samba/vfs/fruit.so && change="no" || change="yes"
+  if [ "$change" = "yes" ]; then
+    current=$(dpkg-query -f '${Version}' -W samba | sed 's/+.*//')
+    [ "$current" = "$patched" ] && recompile="no" || recompile="yes"
+    if [ "$recompile" = "yes" ]; then
+      log "*** WARNING: fruit module must be recompiled for current samba version $current"
+      return
+    fi
+    log "Use fruit module with nfs_aces_on_share support"
+    sudo cp "$data/fruit.so" /usr/lib/${march}-linux-gnu/samba/vfs/fruit.so
+    sudo systemctl restart smbd
+  fi
+}
+
+
+# main
+
+samba_fruit_nfsaces
