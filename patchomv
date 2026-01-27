@@ -297,6 +297,20 @@ function avahi_no_count_hostname()
   _delete=no
 }
 
+function shares_symlinks()
+{
+  change=no
+  [ "$1" = "delete" ] && _delete="yes"
+  file_changed 15sharelink.sls systemd/15sharelink.sls && change="yes"
+  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
+    log "Symlinks for shares"
+    apply_salt="yes"
+    category="$category\nsystemd"
+  fi
+  _delete=no
+}
+
+
 # --- main
 if [[ $EUID -ne 0 ]]; then
    echo "Error: This script must be run with sudo."
@@ -343,6 +357,7 @@ enable_hdparm
 samba_global_mac
 cron_timer
 rsync_timer
+shares_symlinks
 
 # modify source code
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
