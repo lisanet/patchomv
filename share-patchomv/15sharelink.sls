@@ -1,6 +1,6 @@
 {% set sharedfolder_config = salt['omv_conf.get']('conf.system.sharedfolder') | rejectattr('name', 'equalto', 'home') | list %}
 {% set shares = "/shares"  %}
-{% set existing_files = salt['file.readdir'](shares) or [] %}
+{% set existing_files = salt['file.readdir'](shares) if salt['file.directory_exists'](shares) else [] %}
 
 create_sharelink_shares_dir:
   file.directory:
