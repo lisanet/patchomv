@@ -3,6 +3,7 @@
 # internal variables and functions, do not touch
 deploy="/srv/salt/omv/deploy"
 apply_salt=no
+restart_engined=no
 category=
 data="/usr/local/share/patchomv"
 delete=no
@@ -57,7 +58,7 @@ function file_changed ()
 }
 
 # this function must be called last
-function finally_write_env()
+function finally_apply_all()
 {
   category=$(echo -e $category | sort | uniq | tr "\n" " ")
   if [ "$apply_salt" = "yes" ]; then
@@ -69,6 +70,10 @@ function finally_write_env()
     echo "done."
   else
     echo "Nothing to apply."
+  fi
+  if [ "$restart_engined" = "yes" ]; then
+    echo "Restarting omv-engined"
+    sudo systemctl restart openmediavault-engined
   fi
 }
 
@@ -175,6 +180,7 @@ function show_users_group()
     cd /usr/share/php/openmediavault/system
     patch -p0 < "$data/group.inc.diff"
   fi
+  restart_engined="yes"
 }
 
 function manage_default_acl()
@@ -186,6 +192,19 @@ function manage_default_acl()
     cd /usr/share/openmediavault/engined/rpc
     sudo patch -p0 < "$data/sharemgmt.inc.diff"
   fi
+  restart_engined="yes"
+}
+
+function compose_link_bonjour()
+{
+  change="no"
+  grep -q "if (empty(.dn))" /usr/share/openmediavault/engined/rpc/compose.inc || change="yes"
+  if [ "$change" = "yes" ]; then
+    echo "Compose CTerm links for .local domain"
+    cd /usr/share/openmediavault/engined/rpc
+    sudo patch -p0 < "$data/compose.inc.diff"
+  fi
+  restart_engined="yes"
 }
 
 function plex_check_autoshutdown()
@@ -370,7 +389,8 @@ hostname_case
 optional_domainname
 show_users_group
 manage_default_acl
+compose_link_bonjour
 plex_check_autoshutdown
 
 # don't remove this line
-finally_write_env
+finally_apply_all

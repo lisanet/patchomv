@@ -1,0 +1,12 @@
+--- compose.inc.orig	2026-01-30 13:08:29.189414688 +0100
++++ compose.inc	2026-01-30 13:04:56.345380226 +0100
+@@ -240,6 +240,9 @@
+             $dns = $db->get('conf.system.network.dns');
+             $urlhn = $dns->get('hostname');
+             $dn = $dns->get('domainname');
++            if (empty($dn)) { 
++                $dn = "local";
++            }
+             if (strlen($dn) > 1) {
+                 $urlhn = sprintf('%s.%s', $urlhn, $dn);
+             }
