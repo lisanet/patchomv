@@ -179,8 +179,8 @@ function show_users_group()
     echo "Allow modification of group users"
     cd /usr/share/php/openmediavault/system
     patch -p0 < "$data/group.inc.diff"
+    restart_engined="yes"
   fi
-  restart_engined="yes"
 }
 
 function manage_default_acl()
@@ -191,8 +191,8 @@ function manage_default_acl()
     echo "Fix management of default ACLs"
     cd /usr/share/openmediavault/engined/rpc
     sudo patch -p0 < "$data/sharemgmt.inc.diff"
+    restart_engined="yes"
   fi
-  restart_engined="yes"
 }
 
 function compose_link_bonjour()
@@ -203,8 +203,8 @@ function compose_link_bonjour()
     echo "Compose CTerm links for .local domain"
     cd /usr/share/openmediavault/engined/rpc
     sudo patch -p0 < "$data/compose.inc.diff"
+      restart_engined="yes"
   fi
-  restart_engined="yes"
 }
 
 function plex_check_autoshutdown()
