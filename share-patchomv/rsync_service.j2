@@ -5,7 +5,8 @@
 {{ pillar['headers']['multiline'] -}}
 [Unit]
 Description=Service for job {{ prefix ~ job.uuid }}
-After=network-online.target
+After=network-online.target avahi-daemon.service
+Wants=network-online.target avahi-daemon.service
 
 [Service]
 Type=oneshot
