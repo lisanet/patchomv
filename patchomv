@@ -128,6 +128,25 @@ function identifier_spaces()
   fi
 }
 
+function change_login_background()
+{
+  [ ! -e "$data/login.jpg" ] && return
+  change=$(cmp "$data/login.jpg" /var/www/openmediavault/assets/images/login.jpg)
+  if [ -n "$change" ]; then
+    echo "Set custom loginbackground"
+    sudo cp "$data/login.jpg" /var/www/openmediavault/assets/images/login.jpg
+  fi
+}
+
+function background_blend_mode()
+{
+  # change background blend mode 
+  file=$(grep -l 'mix-blend-mode:hard-light' /var/www/openmediavault/*js)
+  if [ -n "$file" ]; then
+    echo "Set background blend mode to normal"
+    sudo sed -i -e 's|mix-blend-mode:hard-light|mix-blend-mode:normal|' "$file"
+  fi
+}
 
 function usb_raid()
 {
@@ -382,6 +401,8 @@ shares_symlinks
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
 sharename_spaces
 identifier_spaces
+change_login_background
+background_blend_mode
 usb_raid
 apply_confirmation
 nocursor
