@@ -140,11 +140,13 @@ function change_login_background()
 
 function background_blend_mode()
 {
-  # change background blend mode 
+  # change background blend mode
+  # blend modes see https://developer.mozilla.org/de/docs/Web/CSS/Reference/Properties/mix-blend-mode
+  blendmode="normal" 
   file=$(grep -l 'mix-blend-mode:hard-light' /var/www/openmediavault/*js)
   if [ -n "$file" ]; then
-    echo "Set background blend mode to normal"
-    sudo sed -i -e 's|mix-blend-mode:hard-light|mix-blend-mode:normal|' "$file"
+    echo "Set background blend mode to $blendmode"
+    sudo sed -i -e "s|mix-blend-mode:.*;}omv-login|mix-blend-mode:$blendmode;}omv-login|" "$file"
   fi
 }
 
