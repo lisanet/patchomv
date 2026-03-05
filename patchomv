@@ -406,8 +406,9 @@ shares_symlinks
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
 sharename_spaces
 identifier_spaces
-change_login_background
-background_blend_mode
+# use separate plugin instead. See https://github.com/lisanet/openmediavault-customimages
+# change_login_background
+# background_blend_mode
 usb_raid
 apply_confirmation
 nocursor
