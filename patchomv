@@ -128,31 +128,6 @@ function identifier_spaces()
   fi
 }
 
-function change_login_background()
-{
-  [ ! -e "$data/login.jpg" ] && return
-  change=$(cmp "$data/login.jpg" /var/www/openmediavault/assets/images/login.jpg)
-  if [ -n "$change" ]; then
-    echo "Set custom loginbackground"
-    sudo cp "$data/login.jpg" /var/www/openmediavault/assets/images/login.jpg
-  fi
-}
-
-function background_blend_mode()
-{
-  # change background blend mode
-  # blend modes see https://developer.mozilla.org/de/docs/Web/CSS/Reference/Properties/mix-blend-mode
-  blendmode="normal" 
-  file=$(grep -l "mix-blend-mode:.*;}omv-login" /var/www/openmediavault/*js)
-  if [ -n "$file" ]; then
-    grep -q "mix-blend-mode:$blendmode" "$file" && change=no || change=yes
-    if [ "$change" = "yes" ]; then
-      echo "Set background blend mode to $blendmode"
-      sudo sed -i -e "s|mix-blend-mode:.*;}omv-login|mix-blend-mode:$blendmode;}omv-login|" "$file"
-    fi
-  fi
-}
-
 function usb_raid()
 {
   [ ! -e /usr/share/openmediavault/engined/rpc/mdmgmt.inc ] && return
@@ -406,9 +381,6 @@ shares_symlinks
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
 sharename_spaces
 identifier_spaces
-# use separate plugin instead. See https://github.com/lisanet/openmediavault-customimages
-# change_login_background
-# background_blend_mode
 usb_raid
 apply_confirmation
 nocursor
