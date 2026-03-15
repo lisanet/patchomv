@@ -196,6 +196,7 @@ function manage_default_acl()
 
 function compose_link_bonjour()
 {
+  [ -e /usr/share/openmediavault/engined/rpc/compose.inc ] || return
   change="no"
   grep -q "if (empty(.dn))" /usr/share/openmediavault/engined/rpc/compose.inc || change="yes"
   if [ "$change" = "yes" ]; then
