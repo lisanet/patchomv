@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    install|upgrade)
+        rm -f /usr/local/bin/patchomv
+        rm -f /usr/local/bin/patchsamba
+        rm -f /etc/apt/apt.conf.d/99patchomv
+        rm -f /etc/apt/apt.conf.d/99patchsamba
+        rm -rf /usr/local/share/patchomv || true
+        ;;
+esac
+
+exit 0

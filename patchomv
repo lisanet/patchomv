@@ -5,7 +5,7 @@ deploy="/srv/salt/omv/deploy"
 apply_salt=no
 restart_engined=no
 category=
-data="/usr/local/share/patchomv"
+data="/usr/share/patchomv"
 delete=no
 _delete=no
 

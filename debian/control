@@ -1,0 +1,13 @@
+Source: patchomv
+Section: utils
+Priority: optional
+Maintainer: Simone Karin Lehmann
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+
+Package: patchomv
+Architecture: all
+Depends: ${misc:Depends}, curl, jq
+Description: Patch set for openmediavault
+  Patch set for openmediavault, includes a patched version of samba's vfs fruit module.
+

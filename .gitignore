@@ -1,3 +1,12 @@
 .DS_Store
 *.swp
 fruit.so
+# Debian build artifacts
+debian/.debhelper/
+debian/patchomv/
+debian/patchomv-dbgsym/
+debian/tmp/
+debian/files
+debian/*.substvars
+debian/*.debhelper
+debian/*.debhelper.log

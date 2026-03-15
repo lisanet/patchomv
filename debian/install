@@ -1,0 +1,5 @@
+patchomv usr/bin/
+patchsamba usr/bin/
+99patchomv etc/apt/apt.conf.d/
+99patchsamba etc/apt/apt.conf.d/
+share-patchomv/* usr/share/patchomv/
