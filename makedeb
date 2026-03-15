@@ -1,0 +1,21 @@
+#!/bin/bash
+
+debarch=$(dpkg --print-architecture)
+if ! grep -q "Architecture: $debarch" debian/control; then
+  sed -i "s/Architecture:.*/Architecture: $debarch/" debian/control
+fi
+
+if [ ! -e "share-patchomv/fruit.so" ]; then
+  echo "Error: share-patchomv/fruit.so not found. Please copy fruit.so to share-patchomv/ first."
+  exit 1
+fi
+
+binarch=$(arch | sed 's/_/-/')
+check=$(file -b share-patchomv/fruit.so | grep -qo "$binarch" && echo "yes" || echo "no")
+if [ "$check" = "no" ]; then
+  echo "Error: share-patchomv/fruit.so is not compatible with current architecture $binarch. Please copy the correct fruit.so to share-patchomv/ first."
+  exit 1
+fi
+
+dpkg-buildpackage -us -uc -b
+
