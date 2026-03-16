@@ -207,6 +207,16 @@ function compose_link_bonjour()
   fi
 }
 
+function si_units()
+{
+  file=$(grep -l ">1024.*/=1024" /var/www/openmediavault/*js)
+  if [ -n "$file" ]; then
+    echo "Use SI units (1000) instead of IEC (1024)"
+    sudo sed -i -e 's|KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB|KB","MB","GB","TB","PB","EB","ZB","YB|' "$file"
+    sudo sed -i -e "s|>1024\(.*\)/=1024|>1000\1/=1000|" "$file"
+  fi
+}
+
 function plex_check_autoshutdown()
 {
   echo "Patch for autoshutdown disabled. Patch manually if needed."
@@ -390,6 +400,7 @@ optional_domainname
 show_users_group
 manage_default_acl
 compose_link_bonjour
+si_units
 plex_check_autoshutdown
 
 # don't remove this line
