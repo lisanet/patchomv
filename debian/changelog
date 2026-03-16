@@ -1,3 +1,10 @@
+patchomv (1.1.0-1) unstable; urgency=low
+
+  * Use SI units (1000) instead of IEC (1024)
+  * Remove patch for plex autoshutdown in favour of a separate plugin
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Mon, 16 Mar 2026 22:40:56 +0100
+
 patchomv (1.0.0-1) unstable; urgency=low
 
   * Initial release.
