@@ -1,3 +1,9 @@
+patchomv (1.1.1-1) unstable; urgency=low
+
+  * fix a bug, which deleted the apt hooks
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Wed, 18 Mar 2026 12:57:45 +0100
+
 patchomv (1.1.0-1) unstable; urgency=low
 
   * Use SI units (1000) instead of IEC (1024)
