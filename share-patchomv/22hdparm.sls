@@ -26,6 +26,7 @@ disable_smartmontools_hdparm_{{ device.uuid }}:
     - pattern: ' smartctl'
     - repl: ' #smartctl'
     - backup: False
+{% endfor %}
 
 # Usually '/lib/udev/hdparm' is executed by UDEV when a device is added
 # to apply the hdparm.conf settings. At runtime it is not possible to
