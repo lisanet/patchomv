@@ -19,7 +19,7 @@ divert_hdparm_conf:
   omv_dpkg.divert_add:
     - name: "/etc/hdparm.conf"
 
-{% for device in config | selectattr('devicefile', 'is_block_device') %}
+{% for device in config | selectattr('devicefile') %}
 disable_smartmontools_hdparm_{{ device.uuid }}:
   file.replace:
     - name: "/etc/smartmontools/hdparm.d/openmediavault-{{ device.uuid }}"
@@ -34,6 +34,7 @@ disable_smartmontools_hdparm_{{ device.uuid }}:
 # ourselves.
 # we run this, regardless of wether the configuration has changed or not,
 # because an update of omv may change the smartcontrol settings
+{% for device in config | selectattr('devicefile', 'is_block_device') %}
 reload_hdparm_{{ device.devicefile }}:
   cmd.run:
     - name: "/lib/udev/hdparm"

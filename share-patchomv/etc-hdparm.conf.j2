@@ -1,5 +1,5 @@
 {{ pillar['headers']['multiline'] }}
-{%- for device in config %}
+{%- for device in config | selectattr('devicefile', 'is_block_device') %}
 {{ device.devicefile }} {
 {%- if device.aam > 0 %}
     acoustic_management = {{ device.aam }}
