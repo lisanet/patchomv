@@ -1,6 +1,8 @@
 {%- set user = salt['pillar.get']('default:OMV_RSYNC_CRONUSER', 'root') -%}
 {% set prefix = salt['pillar.get']('default:OMV_RSYNC_CRONSCRIPT_PREFIX', 'rsync-') %}
 {%- set spc = ' ' -%}
+{%- set host = job.dest.uri.split(':')[0].split('@')[-1] -%}
+{%- set islocal = host.endswith('.local') if host else false -%}
 
 {{ pillar['headers']['multiline'] -}}
 [Unit]
@@ -13,6 +15,10 @@ Type=oneshot
 Environment="SHELL=/bin/sh"
 Environment="PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 User={{ user }}
+{%- if islocal %}
+ExecStartPre=nc -z {{ host }} 873
+ExecStartPre=/bin/sh -c 'until nc -z {{ host }} 873; do sleep 5; done'
+{%- endif %}
 ExecStart=/bin/sh -c '{{ script_path }} 
 {%- if not job.sendemail | to_bool -%}
 {{ spc }}>/dev/null 2>&1

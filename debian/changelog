@@ -1,8 +1,9 @@
 patchomv (1.2.0-1) unstable; urgency=low
 
   * only use block devices for hdparm
+  * rsync remote: proper wakeup for bonjour remote hosts (.local)
 
- -- Simone Karin Lehmann <skl@lisanet.de>  Sat, 04 Apr 2026 19:26:49 +0200
+ -- Simone Karin Lehmann <skl@lisanet.de>  Thu, 09 Apr 2026 20:54:45 +0200
 
 patchomv (1.1.1-1) unstable; urgency=low
 
