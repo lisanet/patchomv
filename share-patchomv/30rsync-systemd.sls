@@ -52,14 +52,15 @@ create_rsync_scripts_dir:
     - makedirs: True
 
 {% for job in jobs | selectattr('enable')%}
-{% set rsync_id = loop.index ~ '-' ~ job.uuid[:8] %}
+{% set sharename = salt['omv_conf.get_sharedfolder_name'](job.src.sharedfolderref) %}
+{% set rsync_id = loop.index ~ '-' ~ sharename %}
 {% set service = prefix ~ rsync_id ~ '.service' %}
 {% set timer = prefix ~ rsync_id ~ '.timer' %}
 {% set service_path = systemd_dir | path_join(service) %}
 {% set timer_path = systemd_dir | path_join(timer) %}
-{% set script_path = scripts_dir | path_join(script_prefix ~ job.uuid) %}
+{% set script_path = scripts_dir | path_join(script_prefix ~ rsync_id) %}
 
-create_rsync_systemd_{{ job.uuid }}_script:
+create_rsync_systemd_{{ rsync_id }}_script:
   file.managed:
     - name: "{{ script_path }}"
     - source:
@@ -71,7 +72,7 @@ create_rsync_systemd_{{ job.uuid }}_script:
     - group: root
     - mode: 750
 
-create_rsync_systemd_{{ job.uuid }}_service:
+create_rsync_systemd_{{ rsync_id }}_service:
   file.managed:
     - name: "{{ service_path }}"
     - source:
@@ -84,7 +85,7 @@ create_rsync_systemd_{{ job.uuid }}_service:
     - group: root
     - mode: 644
 
-create_rsync_systemd_{{ job.uuid }}_timer:
+create_rsync_systemd_{{ rsync_id }}_timer:
   file.managed:
     - name: "{{ timer_path }}"
     - source:
@@ -97,7 +98,7 @@ create_rsync_systemd_{{ job.uuid }}_timer:
     - group: root
     - mode: 644
 
-link_enable_{{ job.uuid }}_timer_service:
+link_enable_{{ rsync_id }}_timer_service:
   cmd.run:
     - name: systemctl link {{ timer_path }} {{ service_path }}; systemctl enable --now {{ timer }}
 
