@@ -55,14 +55,15 @@ create_task_scripts_dir:
     - makedirs: True
 
 {% for job in jobs | selectattr('enable')%}
-{% set task_id = loop.index ~ '-' ~ job.uuid[:8] %}
+{% set command_name = job.command.split()[0].split('/')[-1] | replace('.', '-') %}
+{% set task_id = loop.index ~ '-' ~ command_name %}
 {% set service = prefix ~ task_id ~ '.service' %}
 {% set timer = prefix ~ task_id ~ '.timer' %}
 {% set service_path = systemd_dir | path_join(service) %}
 {% set timer_path = systemd_dir | path_join(timer) %}
-{% set script_path = scripts_dir | path_join(script_prefix ~ job.uuid) %}
+{% set script_path = scripts_dir | path_join(script_prefix ~ task_id) %}
 
-create_task_systemd_{{ job.uuid }}_script:
+create_task_systemd_{{ task_id }}_script:
   file.managed:
     - name: "{{ script_path }}"
     - contents: |
@@ -74,7 +75,7 @@ create_task_systemd_{{ job.uuid }}_script:
     - group: root
     - mode: 744
 
-create_task_systemd_{{ job.uuid }}_service:
+create_task_systemd_{{ task_id }}_service:
   file.managed:
     - name: "{{ service_path }}"
     - source:
@@ -88,12 +89,12 @@ create_task_systemd_{{ job.uuid }}_service:
     - mode: 644
 
 {% if job.execution == 'reboot' %}
-link_enable_{{ job.uuid }}_service:
+link_enable_{{ task_id }}_service:
   cmd.run:
     - name: systemctl link {{ service_path }}; systemctl enable {{ service }}
 
 {% else %}
-create_task_systemd_{{ job.uuid }}_timer:
+create_task_systemd_{{ task_id }}_timer:
   file.managed:
     - name: "{{ timer_path }}"
     - source:
@@ -106,7 +107,7 @@ create_task_systemd_{{ job.uuid }}_timer:
     - group: root
     - mode: 644
 
-link_enable_{{ job.uuid }}_timer_service:
+link_enable_{{ task_id }}_timer_service:
   cmd.run:
     - name: systemctl link {{ timer_path }} {{ service_path }}; systemctl enable --now {{ timer }}
 
