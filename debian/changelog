@@ -1,3 +1,11 @@
+patchomv (1.3.0-1) unstable; urgency=low
+
+  * more descriptive naming of timer and service unit files and scripts by using the command names of tasks
+  * more descriptive naming of timer and service unit files and rsync scripts by using the names of source shared folders
+  * use symlinks to renamed scripts because the GUI depends on filenames with job.uuid
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Sat, 11 Apr 2026 11:46:44 +0200
+
 patchomv (1.2.0-1) unstable; urgency=low
 
   * only use block devices for hdparm

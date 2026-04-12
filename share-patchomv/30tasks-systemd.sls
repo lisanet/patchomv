@@ -62,6 +62,7 @@ create_task_scripts_dir:
 {% set service_path = systemd_dir | path_join(service) %}
 {% set timer_path = systemd_dir | path_join(timer) %}
 {% set script_path = scripts_dir | path_join(script_prefix ~ task_id) %}
+{% set script_link = scripts_dir | path_join(script_prefix ~ job.uuid) %}
 
 create_task_systemd_{{ task_id }}_script:
   file.managed:
@@ -74,6 +75,11 @@ create_task_systemd_{{ task_id }}_script:
     - user: {{ job.username }}
     - group: root
     - mode: 744
+
+create_task_systemd_{{ task_id }}_link:
+  file.symlink:
+    - name: "{{ script_link }}"
+    - target: "{{ script_prefix ~ task_id }}"
 
 create_task_systemd_{{ task_id }}_service:
   file.managed:

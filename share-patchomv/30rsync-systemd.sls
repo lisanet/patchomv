@@ -52,13 +52,14 @@ create_rsync_scripts_dir:
     - makedirs: True
 
 {% for job in jobs | selectattr('enable')%}
-{% set sharename = salt['omv_conf.get_sharedfolder_name'](job.src.sharedfolderref) %}
+{% set sharename = salt['omv_conf.get_sharedfolder_name'](job.src.sharedfolderref) | replace(' ', '_') | replace('.', '-') %}
 {% set rsync_id = loop.index ~ '-' ~ sharename %}
 {% set service = prefix ~ rsync_id ~ '.service' %}
 {% set timer = prefix ~ rsync_id ~ '.timer' %}
 {% set service_path = systemd_dir | path_join(service) %}
 {% set timer_path = systemd_dir | path_join(timer) %}
 {% set script_path = scripts_dir | path_join(script_prefix ~ rsync_id) %}
+{% set script_link = scripts_dir | path_join(script_prefix ~ job.uuid) %}
 
 create_rsync_systemd_{{ rsync_id }}_script:
   file.managed:
@@ -71,6 +72,11 @@ create_rsync_systemd_{{ rsync_id }}_script:
     - user: root
     - group: root
     - mode: 750
+
+create_rsync_systemd_{{ rsync_id }}_link:
+  file.symlink:
+    - name: "{{ script_link }}"
+    - target: "{{ script_prefix ~ rsync_id }}"
 
 create_rsync_systemd_{{ rsync_id }}_service:
   file.managed:
