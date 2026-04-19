@@ -3,8 +3,10 @@ patchomv (1.3.0-1) unstable; urgency=low
   * more descriptive naming of timer and service unit files and scripts by using the command names of tasks
   * more descriptive naming of timer and service unit files and rsync scripts by using the names of source shared folders
   * use symlinks to renamed scripts because the GUI depends on filenames with job.uuid
+  * omv 8.2.7 finally uses %h for avahi service names, so no need to set them and therefor unset them
+  * depend on omv >= 8.2.7
 
- -- Simone Karin Lehmann <skl@lisanet.de>  Sat, 11 Apr 2026 11:46:44 +0200
+ -- Simone Karin Lehmann <skl@lisanet.de>  Sun, 19 Apr 2026 15:36:09 +0200
 
 patchomv (1.2.0-1) unstable; urgency=low
 
