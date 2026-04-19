@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+
+. /usr/share/openmediavault/scripts/helper-functions
+
+case "$1" in
+    install|upgrade)
+        omv="$(dpkg-query -f '${Version}' -W openmediavault)"
+        if dpkg --compare-versions "$omv" ge "8.2.7-1"; then
+            if omv-env get OMV_SAMBA_ZEROCONF_NAME | grep -q "%h" ; then
+                omv-env unset OMV_RSYNC_ZEROCONF_NAME
+                omv-env unset OMV_SSHD_ZEROCONF_NAME
+                omv-env unset OMV_WEBGUI_ZEROCONF_NAME
+                omv-env unset OMV_SAMBA_ZEROCONF_NAME
+                omv_module_set_dirty avahi
+            fi
+        fi
+esac
+
+exit 0

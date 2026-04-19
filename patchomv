@@ -334,11 +334,6 @@ fi
 # omv environment variables
 # to delete or unset a variable, change 'set_env' to 'unset_env', e.g: unset_env samba OMV_SAMBA_CREATEMASK 0644
 # 
-# Mac style service names
-set_env avahi OMV_RSYNC_ZEROCONF_NAME "%h"
-set_env avahi OMV_SSHD_ZEROCONF_NAME "%h"
-set_env avahi OMV_WEBGUI_ZEROCONF_NAME "%h"
-set_env avahi OMV_SAMBA_ZEROCONF_NAME "%h"
 # ensure mac specific samba settings
 set_env samba OMV_SAMBA_FRUIT_AAPL yes
 set_env samba OMV_SAMBA_SHARE_VFSOBJECTS "fruit streams_xattr"
