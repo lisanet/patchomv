@@ -6,7 +6,7 @@ Build-Depends: debhelper-compat (= 13)
 Standards-Version: 4.6.2
 
 Package: patchomv
-Architecture: arm64
+Architecture: amd64 arm64
 Depends: ${misc:Depends}, curl, jq, openmediavault (>= 8.2.7-1)
 Description: Patch set for openmediavault
   Patch set for openmediavault, includes a patched version of samba's vfs fruit module.

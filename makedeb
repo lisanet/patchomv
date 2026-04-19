@@ -1,10 +1,5 @@
 #!/bin/bash
 
-debarch=$(dpkg --print-architecture)
-if ! grep -q "Architecture: $debarch" debian/control; then
-  sed -i "s/Architecture:.*/Architecture: $debarch/" debian/control
-fi
-
 if [ ! -e "share-patchomv/fruit.so" ]; then
   echo "Error: share-patchomv/fruit.so not found. Please copy fruit.so to share-patchomv/ first."
   exit 1
