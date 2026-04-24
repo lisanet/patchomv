@@ -1,6 +1,6 @@
---- compose.inc.orig	2026-01-30 13:08:29.189414688 +0100
-+++ compose.inc	2026-01-30 13:04:56.345380226 +0100
-@@ -240,6 +240,9 @@
+--- compose.inc.orig	2026-04-24 20:41:52.368897757 +0200
++++ compose.inc	2026-04-24 20:43:01.942499093 +0200
+@@ -242,6 +242,9 @@
              $dns = $db->get('conf.system.network.dns');
              $urlhn = $dns->get('hostname');
              $dn = $dns->get('domainname');
