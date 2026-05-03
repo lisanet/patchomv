@@ -263,6 +263,7 @@ function cron_timer()
   file_changed 30tasks-systemd.sls cron/30tasks-systemd.sls && change="yes"
   file_changed task_service.j2 cron/files/task_service.j2 && change="yes"
   file_changed task_timer.j2 cron/files/task_timer.j2 && change="yes"
+  [ -e "$deploy/cron/20userdefined.sls" ] && change="yes"
   if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
     log "Use systemd timers for cron"
     sudo rm -f "$deploy/cron/20userdefined.sls"
