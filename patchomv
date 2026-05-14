@@ -160,16 +160,6 @@ function optional_domainname ()
   fi
 }
 
-
-function nocursor()
-{
-  styles=$(grep -l 'amiga20-busy{cursor:url' /var/www/openmediavault/styles*css)
-  if [ -n "$styles" ]; then
-    echo "Removing pixelated cursor in css"
-    sudo sed -i -e 's|amiga20-busy.*amiga13-select|amiga20-busy{cursor:wait,auto}\.omv-cursor-amiga13-select|' "$styles"
-  fi
-}
-
 function show_users_group()
 {
   change="no"
@@ -369,7 +359,6 @@ sharename_spaces
 identifier_spaces
 usb_raid
 apply_confirmation
-nocursor
 hostname_case
 optional_domainname
 show_users_group
