@@ -82,30 +82,11 @@ function finally_apply_all()
 
 function apply_confirmation()
 {
-  # either disable confiramtation on apply/undo or remove checkbox in confirmation dialog
-  # cmd=noapply disables confirmation, anything else removes checkbox
-#  cmd="$1"
-#  main=$(grep main /var/www/openmediavault/index.html | sed -e 's|.*\(main.*\)" type="mod.*|\1|')
-#  main="/var/www/openmediavault/$main"
-
-
-#  if [ "$cmd" = "noapply" ]; then
-#    echo -n "Confirmation on Apply: "
-#    grep -q "want to apply the configuration changes" "$main" && change=yes || change=no
-#    if [ "$change" = "yes" ]; then
-#  sed -e 's|)}onUndoPendingChanges().*{t&&(this.blockUI.start|onUndoPendingChanges(){!0\&\&(this.blockUI.start|' morig.js > mnew.js
-#  sed -e 's|router.navigate(\["/reload"\])}))})}}F|router.navigate(\["/reload"\])}))}}F|' morig.js > mnew.js
-#  sed -e 's|onApplyPendingChanges().*{t&&(this.blockUI.start|onApplyPendingChanges(){!0\&\&(this.blockUI.start|' mnew.js > mnew2.js
-#    fi
-
-#  else
-    file=$(grep -l 'showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0' /var/www/openmediavault/*js)
-    if [ -n "$file" ]; then
-      echo "Confirmation checkbox"
-      sudo sed -i -e 's|showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0|showConfirmCheckbox=!1|' "$file"
-    fi
-#  fi
-
+  file=$(grep -l 'showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0' /var/www/openmediavault/*js)
+  if [ -n "$file" ]; then
+    echo "Confirmation checkbox"
+    sudo sed -i -e 's|showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0|showConfirmCheckbox=!1|' "$file"
+  fi
 }
 
 function sharename_spaces()
