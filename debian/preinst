@@ -15,6 +15,10 @@ case "$1" in
                 omv_module_set_dirty avahi
             fi
         fi
+        # remove divert of former version
+        if dpkg-divert --list | grep -q "hdparm.conf" ; then
+            dpkg-divert --remove --no-rename /etc/hdparm.conf
+        fi 
 esac
 
 exit 0
