@@ -15,10 +15,6 @@ configure_hdparm_conf:
     - group: root
     - mode: 644
 
-divert_hdparm_conf:
-  omv_dpkg.divert_add:
-    - name: "/etc/hdparm.conf"
-
 {% for device in config | selectattr('devicefile') %}
 disable_smartmontools_hdparm_{{ device.uuid }}:
   file.replace:
