@@ -39,7 +39,7 @@ remove_rsync_systemd_scripts:
     - file.find:
       - path: "{{ scripts_dir }}"
       - iname: "{{ script_prefix }}*"
-      - delete: "f"
+      - delete: "fl"
 
 create_rsync_systemd_dir:
   file.directory:
