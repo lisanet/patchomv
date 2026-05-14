@@ -115,7 +115,8 @@ function usb_raid()
   grep -q "Skip.*connected via USB" /usr/share/openmediavault/engined/rpc/mdmgmt.inc && change=yes || change=no
   if [ "$change" = "yes" ]; then
     echo "Enable USB RAID"
-    sudo sed -i -e  '/Skip.*connected via USB/,+2d' /usr/share/openmediavault/engined/rpc/mdmgmt.inc 
+    sudo sed -i -e  '/Skip.*connected via USB/,+2d' /usr/share/openmediavault/engined/rpc/mdmgmt.inc
+    restart_engined="yes" 
   fi
 }
 
