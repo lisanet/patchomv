@@ -154,18 +154,6 @@ function show_users_group()
   fi
 }
 
-function manage_default_acl()
-{
-  change="no"
-  grep -q "only set default acl"  /usr/share/openmediavault/engined/rpc/sharemgmt.inc || change="yes"
-  if [ "$change" = "yes" ]; then
-    echo "Fix management of default ACLs"
-    cd /usr/share/openmediavault/engined/rpc
-    sudo patch -p0 < "$data/sharemgmt.inc.diff"
-    restart_engined="yes"
-  fi
-}
-
 function compose_link_bonjour()
 {
   [ -e /usr/share/openmediavault/engined/rpc/compose.inc ] || return
@@ -344,7 +332,6 @@ apply_confirmation
 hostname_case
 optional_domainname
 show_users_group
-manage_default_acl
 compose_link_bonjour
 si_units
 
