@@ -256,8 +256,8 @@ function avahi_no_count_hostname()
 {
   change=no
   [ "$1" = "delete" ] && _delete="yes"
+  rm -f "$deploy/avahi/files/etc-avahi-avahi-daemon_conf_no2.j2"
   file_changed 21configure.sls avahi/21configure.sls && change="yes"
-  file_changed etc-avahi-avahi-daemon_conf_no2.j2 avahi/files/etc-avahi-avahi-daemon_conf_no2.j2 && change="yes"
   if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
     log "Avahi no -2 hostnames"
     apply_salt="yes"
