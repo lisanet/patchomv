@@ -1,0 +1,22 @@
+--- vfs_fruit.c.orig	2026-03-15 12:56:26.603351681 +0100
++++ vfs_fruit.c	2026-03-15 12:57:07.085656445 +0100
+@@ -336,7 +336,7 @@
+ 		SNUM(handle->conn), FRUIT_PARAM_TYPE_NAME, "time machine", false);
+ 
+ 	config->unix_info_enabled = lp_parm_bool(
+-		-1, FRUIT_PARAM_TYPE_NAME, "nfs_aces", true);
++		SNUM(handle->conn), FRUIT_PARAM_TYPE_NAME, "nfs_aces", true);
+ 
+ 	config->use_copyfile = lp_parm_bool(-1, FRUIT_PARAM_TYPE_NAME,
+ 					   "copyfile", false);
+@@ -4529,10 +4529,8 @@
+ 	/*
+ 	 * UNIX mode
+ 	 */
+-	if (config->unix_info_enabled) {
+ 		attr_data->attr_data.aapl.unix_mode =
+ 			fsp->fsp_name->st.st_ex_mode;
+-	}
+ 
+ 	/*
+ 	 * max_access
