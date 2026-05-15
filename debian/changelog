@@ -1,3 +1,10 @@
+patchomv (1.3.2-1) unstable; urgency=low
+
+  * remove fix for acl. it's now fixed in omv 8.2.13
+  * minor changes to avahi patch
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Fri, 15 May 2026 12:49:35 +0200
+
 patchomv (1.3.1-1) unstable; urgency=low
 
   * fix a bug when disabling cron tasks
