@@ -1,4 +1,4 @@
-patchomv (1.4.1-1) unstable; urgency=low
+patchomv (1.4.0-1) unstable; urgency=low
 
   * update fruit.so
   * fix patchsamba to better handel version numbers
