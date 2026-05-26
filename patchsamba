@@ -1,6 +1,6 @@
 #!/bin/bash
 
-patched="2:4.22.8"
+patched="2:4.22.8+dfsg-0+deb13u2"
 data="/usr/share/patchomv"
 
 function samba_fruit_nfsaces()
@@ -9,7 +9,7 @@ function samba_fruit_nfsaces()
 
   cmp -s "$data/fruit.so" /usr/lib/${march}-linux-gnu/samba/vfs/fruit.so && change="no" || change="yes"
   if [ "$change" = "yes" ]; then
-    current=$(dpkg-query -f '${Version}' -W samba | sed 's/+.*//')
+    current=$(dpkg-query -f '${Version}' -W samba)
     [ "$current" = "$patched" ] && recompile="no" || recompile="yes"
     if [ "$recompile" = "yes" ]; then
       echo "*** WARNING: fruit module must be recompiled for current samba version $current"
