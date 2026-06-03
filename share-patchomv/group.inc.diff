@@ -1,12 +1,12 @@
---- group.inc.orig	2026-01-08 20:28:44.340418999 +0100
-+++ group.inc	2026-01-08 20:35:17.895736959 +0100
-@@ -205,6 +205,9 @@
- 	 * @return TRUE if the group is a system account, otherwise FALSE.
- 	 */
- 	public function isSystemAccount(): bool {
-+		if ($this->name == "users") {
-+			return FALSE;
-+		}
- 		$this->getData();
- 		return $this->isSystemAccount;
- 	}
+--- group.inc.orig	2026-05-27 20:33:05.000000000 +0200
++++ group.inc	2026-06-03 18:42:33.871774356 +0200
+@@ -225,6 +225,9 @@
+      */
+     public function isSystemAccount(): bool
+     {
++        if ($this->name == "users") {
++            return FALSE;
++        }
+         $this->getData();
+         return $this->isSystemAccount;
+     }
