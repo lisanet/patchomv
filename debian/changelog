@@ -1,3 +1,9 @@
+patchomv (1.4.1-1) unstable; urgency=low
+
+  * update for omv 8.3.1
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Wed, 03 Jun 2026 18:50:54 +0200
+
 patchomv (1.4.0-1) unstable; urgency=low
 
   * update fruit.so
