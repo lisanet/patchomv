@@ -109,19 +109,6 @@ function identifier_spaces()
   fi
 }
 
-function usb_raid()
-{
-  [ ! -e /usr/share/openmediavault/engined/rpc/mdmgmt.inc ] && return
-  grep -q "Skip.*connected via USB" /usr/share/openmediavault/engined/rpc/mdmgmt.inc && change=yes || change=no
-  if [ "$change" = "yes" ]; then
-    echo "Enable USB RAID"
-    cd /usr/share/openmediavault/engined/rpc
-    patch -p0 < "$data/mdmgmt.inc.diff"
-    restart_engined="yes" 
-  fi
-}
-
-
 function hostname_case()
 {
   grep -q "lower" /srv/salt/omv/deploy/hostname/default.sls && change=yes || change=no
@@ -328,7 +315,6 @@ shares_symlinks
 # to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
 sharename_spaces
 identifier_spaces
-usb_raid
 apply_confirmation
 hostname_case
 optional_domainname
