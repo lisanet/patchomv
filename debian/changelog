@@ -1,3 +1,11 @@
+patchomv (1.4.2-1) unstable; urgency=low
+
+  * remove patch for usb RAID. It's now implemeted in openmediavault-md by setting
+    the environmen variable OMV_MDADM_ALLOW_USB_DEVICES to yes
+  * update patch for avahi
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Fri, 05 Jun 2026 13:32:44 +0200
+
 patchomv (1.4.1-1) unstable; urgency=low
 
   * update for omv 8.3.1
