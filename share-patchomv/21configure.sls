@@ -3,14 +3,14 @@
 configure_avahi_daemon_conf_no2-ipv4:
   file.replace:
     - name: "/etc/avahi/avahi-daemon.conf"
-    - pattern: "publish-aaaa-on-ipv4=yes"
+    - pattern: "publish-aaaa-on-ipv4.*"
     - repl: "publish-aaaa-on-ipv4=no"
     - backup: False
 
 configure_avahi_daemon_conf_no2-ipv6:
   file.replace:
     - name: "/etc/avahi/avahi-daemon.conf"
-    - pattern: "publish-a-on-ipv6=yes"
+    - pattern: "publish-a-on-ipv6.*"
     - repl: "publish-a-on-ipv6=no"
     - backup: False
 
