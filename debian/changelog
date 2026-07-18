@@ -1,3 +1,17 @@
+patchomv (1.4.4-1) unstable; urgency=low
+
+  * additional patch to allow spaces in share names, because the maintainer of OMV does everything to force
+    his wierd opinion that Samba share names should not contain spaces on every user.
+    Samba has handled spaces in share names without any problems for ages. So it's ridiculous what OMV does here.
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Sat, 18 Jul 2026 16:37:10 +0200
+
+patchomv (1.4.3-1) unstable; urgency=low
+
+  * update fruit.so
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Sat, 11 Jul 2026 19:57:10 +0200
+
 patchomv (1.4.2-1) unstable; urgency=low
 
   * remove patch for usb RAID. It's now implemeted in openmediavault-md by setting
