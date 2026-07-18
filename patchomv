@@ -1,33 +1,31 @@
 #!/bin/bash
 
 # internal variables and functions, do not touch
+PACKAGE="patchomv"
 deploy="/srv/salt/omv/deploy"
 apply_salt=no
 restart_engined=no
 category=
 data="/usr/share/patchomv"
-delete=no
-_delete=no
+quiet="no"
+rmall="no"
 
 function log()
 {
-  if [ "$delete" = "yes" ] || [ "$_delete" = "yes" ]; then
-    echo "Deleting: $1"
-  else
-    echo "$1"
-  fi
+  [ "$quiet" = "yes" ] && return
+  echo "   $1"
 }
 
 function set_env()
 {
-  if [ "$delete" = "yes" ]; then
-    unset_env "$1" "$2" "$3"
+  (omv-env get $2 | grep -q "$3" ) && enabled=yes || enabled=no
+  if [ "$rmall" = "yes" ]; then
+    unset_env "$1" "$2"
     return
   fi
-  (sudo omv-env get $2 | grep -q "$3" ) && enabled=yes || enabled=no
   if [ "$enabled" = "no" ]; then
-    echo "Set $2 to $3: "
-    sudo omv-env set $2 "$3"
+    log "Set $2 to $3: "
+    omv-env set $2 "$3"
     apply_salt=yes
     category="$category\n$1"
   fi
@@ -35,10 +33,16 @@ function set_env()
 
 function unset_env()
 {
-  echo "Unset $2: "
-  sudo omv-env unset $2
+  log "Unset $2: "
+  omv-env unset $2
   apply_salt=yes
   category="$category\n$1"
+}
+
+function get_env()
+{
+  local val="$(sudo omv-env get "$1" | cut -d '=' -f2)"
+  echo "${val:-$2}"
 }
 
 function file_changed ()
@@ -46,11 +50,7 @@ function file_changed ()
   src="$data/$1"
   dest="$deploy/$2"
   _retval=1
-
-  if [ "$delete" = "yes" ] || [ "$_delete" = "yes" ]; then
-    rm -f "$dest"
-    _retval=0
-  elif [ ! -e "$dest" ] || ! cmp -s "$src" "$dest"; then
+  if [ ! -e "$dest" ] || ! cmp -s "$src" "$dest"; then
     cp "$src" "$dest"
     _retval=0
   fi
@@ -82,95 +82,176 @@ function finally_apply_all()
 
 function apply_confirmation()
 {
-  file=$(grep -l 'showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0' /var/www/openmediavault/*js)
-  if [ -n "$file" ]; then
-    echo "Confirmation checkbox"
-    sudo sed -i -e 's|showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0|showConfirmCheckbox=!1|' "$file"
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    file=$(grep -l 'showConfirmCheckbox=!1);break' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "OMV default: Enable confirmation checkbox"
+      sed -i -e 's|showConfirmCheckbox=!1);break|showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0);break|' "$file" 
+    fi
+  else 
+    file=$(grep -l 'showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "Remove confirmation checkbox"
+      sed -i -e 's|showConfirmCheckbox=!0,this.config.buttons\[1\].disabled=!0|showConfirmCheckbox=!1|' "$file"
+    fi
   fi
 }
 
 function sharename_spaces()
 {
-  # allow spaces in share names
-  file=$(grep -l ':+|<>=;,\*?\. ]' /var/www/openmediavault/*js)
-  if [ -n "$file" ]; then
-    echo "Allow spaces in share names"
-    sudo sed -i -e 's/:+|<>=;,\*?\. ]/:+|<>=;,\*?\.]/g' "$file"
-  fi
-  change="no"
-  grep -q ':+|<>=;,\*?\. ]' /opt/saltstack/salt/extras-3.14/openmediavault/datamodel/schema.py && change="yes"
-  if [ "$change" = "yes" ]; then
-    echo "Additional aptch for spaces in share names"
-    cd /opt/saltstack/salt/extras-3.14/openmediavault/datamodel/
-    patch -p0 < "$data/samba-spaces.diff"
-    apply_salt="yes"
-    category="$category\nsamba"
+  local change="no"
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    file=$(grep -l ':+|<>=;,\*?\.]' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "OMV default: forbid spaces in share names - 1"
+      sed -i -e 's/:+|<>=;,\*?\.]/:+|<>=;,\*?\. ]/g' "$file"
+    fi
+    grep -q ':+|<>=;,\*?\.]' /usr/lib/python3/dist-packages/openmediavault/datamodel/schema.py && change="yes"
+    if [ "$change" = "yes" ]; then
+      log "OMV default: forbid spaces in share names - 2"
+      cd /usr/lib/python3/dist-packages/openmediavault/datamodel
+      patch -R -p0 < "$data/samba-spaces.diff"
+      apply_salt="yes"
+      category="$category\nsamba"
+    fi
+  else
+    file=$(grep -l ':+|<>=;,\*?\. ]' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "Allow spaces in share names - 1"
+      sed -i -e 's/:+|<>=;,\*?\. ]/:+|<>=;,\*?\.]/g' "$file"
+    fi
+    grep -q ':+|<>=;,\*?\. ]' /usr/lib/python3/dist-packages/openmediavault/datamodel/schema.py && change="yes"
+    if [ "$change" = "yes" ]; then
+      log "Allow spaces in share names - 2"
+      cd /usr/lib/python3/dist-packages/openmediavault/datamodel
+      patch -p0 < "$data/samba-spaces.diff"
+      apply_salt="yes"
+      category="$category\nsamba"
+    fi
   fi
 }
 
 function identifier_spaces()
 {
-  # allow spaces in identifiers
-  file=$(grep -l '/^\[\\w\]+\$/' /var/www/openmediavault/*js)
-  if [ -n "$file" ]; then
-    echo "Allow spaces in identifiers"
-    sudo sed -i -e 's|\^\[\\w\]+\$|\^\[\\w \]+\$|' "$file"
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    file=$(grep -l '/^\[\\w \]+\$/' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "OMV default: forbid spaces in identifiers"
+      sed -i -e 's|\^\[\\w\ ]+\$|\^\[\\w\]+\$|' "$file"
+    fi
+  else
+    file=$(grep -l '/^\[\\w\]+\$/' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "Allow spaces in identifiers"
+      sed -i -e 's|\^\[\\w\]+\$|\^\[\\w \]+\$|' "$file"
+    fi
   fi
 }
-
-function hostname_case()
-{
-  grep -q "lower" /srv/salt/omv/deploy/hostname/default.sls && change=yes || change=no
-  if [ "$change" = "yes" ]; then
-    echo "Hostname case sensitive"
-    sudo sed -i -e "s/| lower//"  "/srv/salt/omv/deploy/hostname/default.sls"
-    apply_salt=yes
-    category="$category\nhostname\navahi"
-  fi
-}
-
 
 function optional_domainname ()
 {
-  file=$(grep -l 'domainName",required:!0' /var/www/openmediavault/*js)
-  if [ -n "$file" ]; then
-    echo "Domainname optional"
-    sudo sed -i -e 's/domainName",required:!0/domainName",required:!1/' "$file"
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    file=$(grep -l 'domainName",required:!1' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "OMV default: domainname required"
+      sed -i -e 's/domainName",required:!1/domainName",required:!0/' "$file"
+    fi
+  else
+    file=$(grep -l 'domainName",required:!0' /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "Domainname optional"
+      sed -i -e 's/domainName",required:!0/domainName",required:!1/' "$file"
+    fi
+  fi
+}
+
+function si_units()
+{
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    file=$(grep -l ">1000.*/=1000" /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "OMV default: Use IEC units (1024) instead of SI (1000)"
+      sed -i -e 's|KB","MB","GB","TB","PB","EB","ZB","YB|KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB|' "$file"
+      sed -i -e "s|>1000\(.*\)/=1000|>1024\1/=1024|" "$file"
+    fi
+  else
+    file=$(grep -l ">1024.*/=1024" /var/www/openmediavault/*js)
+    if [ -n "$file" ]; then
+      log "Use SI units (1000) instead of IEC (1024)"
+      sed -i -e 's|KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB|KB","MB","GB","TB","PB","EB","ZB","YB|' "$file"
+      sed -i -e "s|>1024\(.*\)/=1024|>1000\1/=1000|" "$file"
+    fi
+  fi
+}
+
+# diff patches
+
+function hostname_case()
+{
+  local change="no"
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    grep -q "lower" /srv/salt/omv/deploy/hostname/default.sls || change=yes
+    if [ "$change" = "yes" ]; then
+      log "OMV default: hostname always lower case"
+      cd /srv/salt/omv/deploy/hostname
+      patch -R -p0 < "$data/hostname-default.sls.diff"
+      apply_salt=yes
+      category="$category\nhostname\navahi"
+    fi
+  else
+    grep -q "lower" /srv/salt/omv/deploy/hostname/default.sls && change=yes
+    if [ "$change" = "yes" ]; then
+      log "Hostname case sensitive"
+      cd /srv/salt/omv/deploy/hostname
+      patch -p0 < "$data/hostname-default.sls.diff"
+      apply_salt=yes
+      category="$category\nhostname\navahi"
+    fi
   fi
 }
 
 function show_users_group()
 {
-  change="no"
-  grep -q 'name == "users"' /usr/share/php/openmediavault/system/group.inc || change="yes"
-  if [ "$change" = "yes" ]; then
-    echo "Allow modification of group users"
-    cd /usr/share/php/openmediavault/system
-    patch -p0 < "$data/group.inc.diff"
-    restart_engined="yes"
+  local change="no"
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    grep -q 'name == "users"' /usr/share/php/openmediavault/system/group.inc && change="yes"
+    if [ "$change" = "yes" ]; then
+      log "OMV default: hide modification of group users"
+      cd /usr/share/php/openmediavault/system
+      patch -R -p0 < "$data/group.inc.diff"
+      restart_engined="yes"
+    fi
+  else
+    grep -q 'name == "users"' /usr/share/php/openmediavault/system/group.inc || change="yes"
+    if [ "$change" = "yes" ]; then
+      log "Allow modification of group users"
+      cd /usr/share/php/openmediavault/system
+      patch -p0 < "$data/group.inc.diff"
+      restart_engined="yes"
+    fi
   fi
 }
 
 function compose_link_bonjour()
 {
   [ -e /usr/share/openmediavault/engined/rpc/compose.inc ] || return
-  change="no"
-  grep -q "if (empty(.dn))" /usr/share/openmediavault/engined/rpc/compose.inc || change="yes"
-  if [ "$change" = "yes" ]; then
-    echo "Compose CTerm links for .local domain"
-    cd /usr/share/openmediavault/engined/rpc
-    sudo patch -p0 < "$data/compose.inc.diff"
+  local change="no"
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    grep -q "if (empty(.dn))" /usr/share/openmediavault/engined/rpc/compose.inc && change="yes"
+    if [ "$change" = "yes" ]; then
+      log "OMV-Default: Forbid Compose CTerm links for .local domain"
+      cd /usr/share/openmediavault/engined/rpc
+      patch -R -p0 < "$data/compose.inc.diff"
       restart_engined="yes"
-  fi
-}
-
-function si_units()
-{
-  file=$(grep -l ">1024.*/=1024" /var/www/openmediavault/*js)
-  if [ -n "$file" ]; then
-    echo "Use SI units (1000) instead of IEC (1024)"
-    sudo sed -i -e 's|KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB|KB","MB","GB","TB","PB","EB","ZB","YB|' "$file"
-    sudo sed -i -e "s|>1024\(.*\)/=1024|>1000\1/=1000|" "$file"
+    fi
+  else
+    grep -q "if (empty(.dn))" /usr/share/openmediavault/engined/rpc/compose.inc || change="yes"
+    if [ "$change" = "yes" ]; then
+      log "Compose CTerm links for .local domain"
+      cd /usr/share/openmediavault/engined/rpc
+      patch -p0 < "$data/compose.inc.diff"
+      restart_engined="yes"
+    fi
   fi
 }
 
@@ -179,28 +260,42 @@ function si_units()
 
 function samba_global_mac()
 {
-  change=no
-  [ "$1" = "delete" ] && _delete="yes"
-  file_changed 11global.sls samba/11global.sls && change="yes"
-  file_changed global-mac.j2 samba/files/global-mac.j2 && change="yes"
-  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
-    log "Modifying samba global"
+  local change=no
+  local msg
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    # remove patch
+    rm "$deploy/samba/11global.sls" 2> /dev/null && change="yes"
+    rm -f "$deploy/samba/files/global-mac.j2" 2> /dev/null && change="yes"
+    msg="Removing macOS optimizations from samba"
+  else
+    file_changed 11global.sls samba/11global.sls && change="yes"
+    file_changed global-mac.j2 samba/files/global-mac.j2 && change="yes"
+    msg="Optimize samba for macOS"
+  fi
+  if [ "$change" = "yes" ]; then
+    log "$msg"
     apply_salt="yes"
     category="$category\nsamba"
-  fi
-  _delete=no
+  fi 
 }
 
 
 function enable_hdparm()
 {
-  change=no
-  [ "$1" = "delete" ] && _delete="yes"
-  file_changed 22hdparm.sls smartmontools/22hdparm.sls && change="yes"
-  file_changed etc-hdparm.conf.j2 smartmontools/files/etc-hdparm.conf.j2 && change="yes"
-  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
-    log "disable smartctl-hdparm"
-    log "enable hdparm"
+  local change=no
+  local msg
+
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    rm "$deploy/smartmontools/22hdparm.sls" 2> /dev/null && change="yes"
+    rm "$deploy/smartmontools/files/etc-hdparm.conf.j2" 2> /dev/null && change="yes"
+    msg="OMV default: Removing hdparm and enable smartctl-hdparm"
+  else
+    file_changed 22hdparm.sls smartmontools/22hdparm.sls && change="yes"
+    file_changed etc-hdparm.conf.j2 smartmontools/files/etc-hdparm.conf.j2 && change="yes"
+    msg="Disable smartctl-hdparm and enable hdparm"
+  fi
+  if [ "$change" = "yes" ]; then
+    log "$msg"
     if [ ! -e /usr/sbin/hdparm ]; then
       log "Installing hdparm package"
       sudo apt install -y hdparm
@@ -209,88 +304,156 @@ function enable_hdparm()
     apply_salt="yes"
     category="$category\nsmartmontools"
   fi
-  _delete=no
+
 }
 
 
 function cron_timer()
 {
-  change="no"
-  [ "$1" = "delete" ] && _delete="yes"
-  file_changed 30tasks-systemd.sls cron/30tasks-systemd.sls && change="yes"
-  file_changed task_service.j2 cron/files/task_service.j2 && change="yes"
-  file_changed task_timer.j2 cron/files/task_timer.j2 && change="yes"
-  [ -e "$deploy/cron/20userdefined.sls" ] && change="yes"
-  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
-    log "Use systemd timers for cron"
-    sudo rm -f "$deploy/cron/20userdefined.sls"
-    sudo rm -f "$deploy/cron/files/userdefined.j2"
+  local change="no"
+  local msg
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    local sysd=$(get_env OMV_SYSTEMD_DIR '/var/lib/openmediavault/systemd')
+    local pfix=$(get_env OMV_SYSTEMD_TASK_PREFIX 'omv-task-')
+    local scriptd="$(get_env OMV_CRONSCRIPTS_DIR '/var/lib/openmediavault/cron.d')"
+    local scriptpfix="$(get_env OMV_CRONTAB_USERDEFINED_PREFIX 'userdefined-')"
+    while read -r timer service; do
+      systemctl stop "$timer" "$service"
+      systemctl disable "$timer" "$service"
+      change="yes"
+    done < <(systemctl -a --no-pager list-timers | grep -oE "$pfix.*service")
+    if [ "$change" = "yes" ]; then
+      rm -f "$sysd/$pfix"*
+      rm -f "$scriptd/$scriptpfix"*
+      rm -f "$deploy/cron/30tasks-systemd.sls" "$deploy/cron/files/task_service.j2" "$deploy/cron/files/task_timer.j2"
+      if [ -e "$deploy/cron/20userdefined.sls.distrib" ]; then
+        dpkg-divert --package "$PACKAGE" --remove --rename "$deploy/cron/20userdefined.sls"
+      fi
+      msg="OMV default: Use cron instead of modern systemd timers"
+    fi
+  else
+    file_changed 30tasks-systemd.sls cron/30tasks-systemd.sls && change="yes"
+    file_changed task_service.j2 cron/files/task_service.j2 && change="yes"
+    file_changed task_timer.j2 cron/files/task_timer.j2 && change="yes"
+    if [ -e "$deploy/cron/20userdefined.sls" ]; then
+      dpkg-divert --package "$PACKAGE" --add --rename --divert "$deploy/cron/20userdefined.sls.distrib" "$deploy/cron/20userdefined.sls"
+      change="yes"
+    fi
+    [ "$change" = "yes" ] &&  msg="Use systemd timers for cron"
+  fi
+  if [ "$change" = "yes" ]; then
+    log "$msg"
     apply_salt="yes"
     category="$category\ncron"
   fi
-  _delete=no
 }
 
 
 function rsync_timer()
 {
-  change=no
-  [ "$1" = "delete" ] && _delete="yes"
-  file_changed 30rsync-systemd.sls rsync/default.sls && change="yes"
-  file_changed rsync_service.j2 rsync/files/rsync_service.j2 && change="yes"
-  file_changed rsync_timer.j2 rsync/files/rsync_timer.j2 && change="yes"
-  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
-    log "Use systemd timers for rsync"
-    sudo rm -f "$deploy/rsync/files/cron-rsync.j2"
+  local change="no"
+  local msg
+  if [ "$1" = "xxx remove" ] || [ "$rmall" = "yes" ]; then
+    local sysd=$(get_env OMV_SYSTEMD_DIR '/var/lib/openmediavault/systemd')
+    local pfix=$(get_env OMV_SYSTEMD_RSYNC_PREFIX 'omv-rsync-')
+    local scriptd="$(get_env OMV_CRONSCRIPTS_DIR '/var/lib/openmediavault/cron.d')"
+    local scriptpfix="$(get_env OMV_RSYNC_CRONSCRIPT_PREFIX 'rsync-')"
+    while read -r timer service; do
+      systemctl stop "$timer" "$service"
+      systemctl disable "$timer" "$service"
+      change="yes"
+    done < <(systemctl -a --no-pager list-timers | grep -oE "$pfix.*service")
+    if [ "$change" = "yes" ]; then
+      rm -f "$sysd/$pfix"*
+      rm -f "$scriptd/$scriptpfix"*
+      rm -f "$deploy/rsync/default.sls" "$deploy/rsync/files/rsync_service.j2" "$deploy/rsync/files/rsync_timer.j2"
+      if [ -e "$deploy/rsync/default.sls.distrib" ]; then
+        rm -f "$deploy/rsync/default.sls"
+        dpkg-divert --package "$PACKAGE" --remove --rename "$deploy/rsync/default.sls"
+      fi
+      msg="OMV default: Use cron for rsync instead of modern systemd timers"
+    fi
+  else
+    if [ ! -e "$deploy/rsync/default.sls.distrib" ]; then
+      dpkg-divert --package "$PACKAGE" --add --rename --divert "$deploy/rsync/default.sls.distrib" "$deploy/rsync/default.sls"
+    fi
+    file_changed 30rsync-systemd.sls rsync/default.sls && change="yes"
+    file_changed rsync_service.j2 rsync/files/rsync_service.j2 && change="yes"
+    file_changed rsync_timer.j2 rsync/files/rsync_timer.j2 && change="yes"
+    [ "$change" = "yes" ] msg="Use systemd timers for rsync"
+  fi
+  if [ "$change" = "yes" ]; then
+    log "$msg"
     apply_salt=yes
     category="$category\nrsync"
   fi
-  [ "$1" = "delete" ] && _delete="yes"
 }
 
 
 function avahi_no_count_hostname()
 {
-  change=no
-  [ "$1" = "delete" ] && _delete="yes"
-  rm -f "$deploy/avahi/files/etc-avahi-avahi-daemon_conf_no2.j2"
-  file_changed 21configure.sls avahi/21configure.sls && change="yes"
+  local change="no"
+  local msg
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    rm -f "$deploy/avahi/files/etc-avahi-avahi-daemon_conf_no2.j2" # old patch version
+    rm -f "$deploy/avahi/21configure.sls"
+    msg="OMV default: remove avahi no -2 hostnames"
+  else
+    # rm old patch version
+    rm -f "$deploy/avahi/files/etc-avahi-avahi-daemon_conf_no2.j2"
+    file_changed 21configure.sls avahi/21configure.sls && change="yes"
+    msg="Avahi no -2 hostnames"
+  fi
   if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
-    log "Avahi no -2 hostnames"
+    log "$msg"
     apply_salt="yes"
     category="$category\navahi"
   fi
-  _delete=no
 }
 
 function shares_symlinks()
 {
-  change=no
-  [ "$1" = "delete" ] && _delete="yes"
-  file_changed 15sharelink.sls systemd/15sharelink.sls && change="yes"
-  if [ "$change" = "yes" ] || [ "$_delete" = "yes" ]; then
-    log "Symlinks for shares"
+  local change="no"
+  local msg
+  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
+    rm "$deploy/systemd/15sharelink.sls" 2> /dev/null && change="yes"
+    rm /shares/*
+    rmdir /shares 2> /dev/null
+    msg="OMV default: no symlinks for shares"
+  else
+    file_changed 15sharelink.sls systemd/15sharelink.sls && change="yes"
+    msg="Symlinks for shares"
+  fi
+  if [ "$change" = "yes" ]; then
+    log "$msg"
     apply_salt="yes"
     category="$category\nsystemd"
   fi
-  _delete=no
 }
 
 
 # --- main
 if [[ $EUID -ne 0 ]]; then
-   echo "Error: This script must be run with sudo."
-   exit 1
-fi
-if [ "$1" = "delete" ]; then
-  delete="yes"
-  echo "Deleting patches and configuration changes to omv"
-else
-  echo "Applying patches and configuration changes to omv"
+  echo "Error: This script must be run with sudo."
+  exit 1
 fi
 
+while [ "$#" -gt 0 ] ; do
+  case "$1" in
+    -q) quiet="yes"
+      ;;
+    -rmall) rmall="yes"
+      ;;
+    *)
+      ;;
+  shift
+  esac
+done
+
+echo "Looking for patches and configuration changes to OMV"
+
 # omv environment variables
-# to delete or unset a variable, change 'set_env' to 'unset_env', e.g: unset_env samba OMV_SAMBA_CREATEMASK 0644
+# to remove or unset a variable, change 'set_env' to 'unset_env', e.g: unset_env samba OMV_SAMBA_CREATEMASK 0644
 # 
 # ensure mac specific samba settings
 set_env samba OMV_SAMBA_FRUIT_AAPL yes
@@ -311,8 +474,7 @@ set_env samba OMV_SAMBA_SHARE_FRUIT_COPYFILE no
 set_env samba OMV_SAMBA_SHARE_FRUIT_RESOURCE xattr
 
 # modify settings using salt
-# to delete a modification, add 'delete' as parameter to the function, e.g: enable_hdparm delete
-# AND wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
+# to remove a modification, add 'remove' as parameter to the function, e.g: enable_hdparm remove
 avahi_no_count_hostname
 enable_hdparm
 samba_global_mac
@@ -321,15 +483,18 @@ rsync_timer
 shares_symlinks
 
 # modify source code
-# to undo these modifications, wait for an update of openmediavault or reinstall: sudo apt reinstall openmediavault
+# to remove a modification, add 'remove' as parameter to the function, e.g: sharename_spaces remove
+# modify .js
 sharename_spaces
 identifier_spaces
 apply_confirmation
-hostname_case
 optional_domainname
+si_units
+# diff patches
+hostname_case
+usb_raid
 show_users_group
 compose_link_bonjour
-si_units
 
 # don't remove this line
 finally_apply_all

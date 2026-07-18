@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+PACKAGE="patchomv"
+
+remove_action() {
+  # remove all patches
+  patchomv -rmall
+}
+
+case "$1" in
+  remove)
+    remove_action
+    ;;
+  upgrade|failed-upgrade|deconfigure)
+    ;;
+  *)
+    echo "prerm called with unknown argument '$1'" >&2
+    exit 1
+    ;;
+
+esac
+
+#DEBHELPER#
+exit 0
