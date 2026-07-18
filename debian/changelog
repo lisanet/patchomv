@@ -6,7 +6,7 @@ patchomv (1.5.0-1) unstable; urgency=low
   * fix: ensure engined restart if changes in rpc
   * make patch for space in shares independant of python version
 
--- Simone Karin Lehmann <skl@lisanet.de>  Sat, 18 Jul 2026 20:19:31 +0200
+ -- Simone Karin Lehmann <skl@lisanet.de>  Sat, 18 Jul 2026 20:19:31 +0200
 
 patchomv (1.4.4-1) unstable; urgency=low
 
