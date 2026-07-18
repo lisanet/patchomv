@@ -1,3 +1,13 @@
+patchomv (1.5.0-1) unstable; urgency=low
+
+  * rewriting all functions: all modification can now be removed
+  * fix: remove symlinks in cron and rsync scripts too before genrating new scripts to avoid stale links
+  * remove divert of /etc/hdparm.conf.It's not neede at all
+  * fix: ensure engined restart if changes in rpc
+  * make patch for space in shares independant of python version
+
+-- Simone Karin Lehmann <skl@lisanet.de>  Sat, 18 Jul 2026 20:19:31 +0200
+
 patchomv (1.4.4-1) unstable; urgency=low
 
   * additional patch to allow spaces in share names, because the maintainer of OMV does everything to force
