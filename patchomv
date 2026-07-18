@@ -97,6 +97,15 @@ function sharename_spaces()
     echo "Allow spaces in share names"
     sudo sed -i -e 's/:+|<>=;,\*?\. ]/:+|<>=;,\*?\.]/g' "$file"
   fi
+  change="no"
+  grep -q ':+|<>=;,\*?\. ]' /opt/saltstack/salt/extras-3.14/openmediavault/datamodel/schema.py && change="yes"
+  if [ "$change" = "yes" ]; then
+    echo "Additional aptch for spaces in share names"
+    cd /opt/saltstack/salt/extras-3.14/openmediavault/datamodel/
+    patch -p0 < "$data/samba-spaces.diff"
+    apply_salt="yes"
+    category="$category\nsamba"
+  fi
 }
 
 function identifier_spaces()

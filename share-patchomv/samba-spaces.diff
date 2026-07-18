@@ -1,0 +1,11 @@
+--- schema.py.orig	2026-07-18 16:28:43.916567239 +0200
++++ schema.py	2026-07-18 16:29:20.762751045 +0200
+@@ -137,7 +137,7 @@
+                 # http://tools.ietf.org/html/draft-leach-cifs-v1-spec-01
+                 # http://msdn.microsoft.com/en-us/library/aa365247%28VS.85%29.aspx
+                 if not re.match(
+-                    r'^[^"/\\\[\]:+|<>=;,*?. ]+(?:\.[^"/\\\[\]:+|<>=;,*?. ]+)*$',
++                    r'^[^"/\\\[\]:+|<>=;,*?.]+(?:\.[^"/\\\[\]:+|<>=;,*?.]+)*$',
+                     value,
+                 ):
+                     raise openmediavault.json.SchemaValidationException(
