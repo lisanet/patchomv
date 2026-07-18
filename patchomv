@@ -13,7 +13,7 @@ rmall="no"
 function log()
 {
   [ "$quiet" = "yes" ] && return
-  echo "   $1"
+  echo "* $1"
 }
 
 function set_env()
@@ -380,7 +380,7 @@ function rsync_timer()
     file_changed 30rsync-systemd.sls rsync/default.sls && change="yes"
     file_changed rsync_service.j2 rsync/files/rsync_service.j2 && change="yes"
     file_changed rsync_timer.j2 rsync/files/rsync_timer.j2 && change="yes"
-    [ "$change" = "yes" ] msg="Use systemd timers for rsync"
+    [ "$change" = "yes" ] && msg="Use systemd timers for rsync"
   fi
   if [ "$change" = "yes" ]; then
     log "$msg"
@@ -446,8 +446,8 @@ while [ "$#" -gt 0 ] ; do
       ;;
     *)
       ;;
-  shift
   esac
+  shift
 done
 
 echo "Looking for patches and configuration changes to OMV"
@@ -492,7 +492,6 @@ optional_domainname
 si_units
 # diff patches
 hostname_case
-usb_raid
 show_users_group
 compose_link_bonjour
 
