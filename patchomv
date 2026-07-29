@@ -97,40 +97,6 @@ function apply_confirmation()
   fi
 }
 
-function sharename_spaces()
-{
-  local change="no"
-  if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
-    file=$(grep -l ':+|<>=;,\*?\.]' /var/www/openmediavault/*js)
-    if [ -n "$file" ]; then
-      log "OMV default: forbid spaces in share names - 1"
-      sed -i -e 's/:+|<>=;,\*?\.]/:+|<>=;,\*?\. ]/g' "$file"
-    fi
-    grep -q ':+|<>=;,\*?\.]' /usr/lib/python3/dist-packages/openmediavault/datamodel/schema.py && change="yes"
-    if [ "$change" = "yes" ]; then
-      log "OMV default: forbid spaces in share names - 2"
-      cd /usr/lib/python3/dist-packages/openmediavault/datamodel
-      patch -R -p0 < "$data/samba-spaces.diff"
-      apply_salt="yes"
-      category="$category\nsamba"
-    fi
-  else
-    file=$(grep -l ':+|<>=;,\*?\. ]' /var/www/openmediavault/*js)
-    if [ -n "$file" ]; then
-      log "Allow spaces in share names - 1"
-      sed -i -e 's/:+|<>=;,\*?\. ]/:+|<>=;,\*?\.]/g' "$file"
-    fi
-    grep -q ':+|<>=;,\*?\. ]' /usr/lib/python3/dist-packages/openmediavault/datamodel/schema.py && change="yes"
-    if [ "$change" = "yes" ]; then
-      log "Allow spaces in share names - 2"
-      cd /usr/lib/python3/dist-packages/openmediavault/datamodel
-      patch -p0 < "$data/samba-spaces.diff"
-      apply_salt="yes"
-      category="$category\nsamba"
-    fi
-  fi
-}
-
 function identifier_spaces()
 {
   if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
@@ -485,7 +451,6 @@ shares_symlinks
 # modify source code
 # to remove a modification, add 'remove' as parameter to the function, e.g: sharename_spaces remove
 # modify .js
-sharename_spaces
 identifier_spaces
 apply_confirmation
 optional_domainname
