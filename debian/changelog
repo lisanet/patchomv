@@ -1,3 +1,11 @@
+patchomv (1.5.1-1) unstable; urgency=low
+
+  * update fruit.so
+  * remove patch for share name spaces. Finally omv has recognized that space in share names 
+    already have been allowed for ages. Even MS said this in 2019
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Wed, 29 Jul 2026 20:59:55 +0200
+
 patchomv (1.5.0-1) unstable; urgency=low
 
   * rewriting all functions: all modification can now be removed
