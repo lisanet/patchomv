@@ -1,9 +1,11 @@
 {%- set fruit_aapl = salt['pillar.get']('default:OMV_SAMBA_FRUIT_AAPL', 'yes') -%}
+{%- set fruit_resource = salt['pillar.get']('default:OMV_SAMBA_SHARE_FRUIT_RESOURCE', 'file') -%}
 {%- if config.netbios | to_bool | not %}
 smb ports = 445
 {%- endif %}
 {%- if fruit_aapl == 'yes' %}
 # macOS global settings
+fruit:resource = {{ fruit_resource }}
 # fruit_model
 readdir_attr:aapl_max_access = no
 # do not make every file executable
