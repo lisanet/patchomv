@@ -15,6 +15,14 @@ case "$1" in
                 omv_module_set_dirty avahi
             fi
         fi
+        if dpkg --compare-versions "$omv" ge "8.5.8-1"; then
+            vfsobj=$(omv-env get OMV_SAMBA_SHARE_VFSOBJECTS)
+            if [ "$vfsobj" = "fruit streams_xattr"]; then 
+                omv-env unset OMV_SAMBA_SHARE_VFSOBJECTS
+                omv-env unset OMV_SAMBA_HOMES_VFSOBJECTS
+                omv_module_set_dirty samba
+            fi
+        fi
         # remove divert of former version
         if dpkg-divert --list | grep -q "hdparm.conf" ; then
             dpkg-divert --local --remove --no-rename /etc/hdparm.conf
