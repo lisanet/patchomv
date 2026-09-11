@@ -269,10 +269,10 @@ function samba_deletes()
   if [ "$1" = "remove" ] || [ "$rmall" = "yes" ]; then
     # remove patch
     rm "$deploy/samba/35deletes.sls" 2> /dev/null && change="yes"
-    msg="OMV default: add obsolete fruit options to samba"
+    msg="OMV default: add obsolete options and incorrect model for vfs fruit"
   else
     file_changed 35deletes.sls samba/35deletes.sls && change="yes"
-    msg="Remove obsolete fruit options from samba"
+    msg="Remove obsolete options and fix model for vfs fruit"
   fi
   if [ "$change" = "yes" ]; then
     log "$msg"
@@ -489,7 +489,7 @@ identifier_spaces
 apply_confirmation
 optional_domainname
 si_units
-macos_compat
+# macos_compat # disable until I find a suitable way to only aplly it once and for new shares, not existing ones
 # diff patches
 hostname_case
 show_users_group

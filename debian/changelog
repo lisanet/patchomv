@@ -1,3 +1,11 @@
+patchomv (1.5.2-1) unstable; urgency=low
+
+  * remove obsolete posix_rename
+  * fix fruit model, it's a global option
+  * remove vfs objects from env, it's now set by macOS compat / timemachine automatically
+
+ -- Simone Karin Lehmann <skl@lisanet.de>  Fri, 11 Sep 2026 18:39:17 +0200
+
 patchomv (1.5.1-1) unstable; urgency=low
 
   * update fruit.so
